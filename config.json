@@ -1,0 +1,82 @@
+{
+    "prefix":"/@list/",
+    "thumb_prefix":"/@thumb/",
+    "debug":false,
+    "animate":true,
+    "map":{
+        "text": {
+            "subtitle": [
+                "vtt",
+                "ass",
+                "srt"
+            ],
+            "lyrics": ["lrc"],
+            "markdown": [
+                "md"
+            ],
+            "code":[
+                "php",
+                "js","css","html","xhtml",
+                "scss","ts",
+                "json","ini","xml","yaml",
+                "c","cpp","h",
+                "java",
+                "go",
+                "make",
+                "perl","pl",
+                "sh","bash","cmd","bat","vbs",
+                "dockerfile","docker"
+            ],
+            "plain": [
+                "log",
+                "txt"
+            ],
+            "cd":["cue"]
+        },
+        "video": {
+            "video": [
+                "webm",
+                "mp4",
+                "mkv",
+                "avi",
+                "ts"
+            ],
+            "uspd_video": [
+                "flv"
+            ]
+        },
+        "audio": {
+            "audio": [
+                "mp3",
+                "aac", "m4a",
+                "opus",
+                "wav",
+                "flac"
+            ]
+        },
+        "image":{
+            "image":[
+                "webp",
+                "jpg","jpeg",
+                "png",
+                "ico",
+                "bmp"
+            ]
+        }
+    },
+    "opener":{
+        "audio":"aplayer.js",
+        "video":"h5video.js",
+        "cd":"vplayer.js",
+        "image":"viewer.js",
+        "text":"highlight.js"
+    },
+    "extension":[
+        "fcheck.js",
+        "setting.js"
+    ],
+    "hide" : [
+        "text/subtitle",
+        "text/lyrics"
+    ]
+}

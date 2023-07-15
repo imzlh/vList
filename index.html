@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>vFileBox</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body{
+                overflow: hidden;
+                margin: 0;
+            }
+            iframe{
+                width: 100vw;height: 100vh;
+                border: none;
+            }
+            #view{
+                z-index: 3;
+                position: fixed;
+                top: 0;bottom: 0;left: 0;right: 0;
+                display: flex;align-items: center;justify-content: center;
+                background-color: rgba(0,0,0,0.5);
+            }
+            *[hidden]{
+                display: none !important;
+            }
+            #box,.btns{
+                display: flex;justify-content: center;flex-wrap: wrap;
+            }
+            #box{
+                background-color: rgb(179 223 244 / 42%);
+                position: fixed;
+                bottom: 0;left: 0;right: 0;
+                z-index: 2;
+            }
+            #box > div,.btns > div{
+                cursor: pointer;
+                padding: 0.5rem;
+                margin: 0.5rem 0.25rem;
+                border-radius: 2rem;
+                transition: background 0.1s;
+            }
+            #box > div:hover,.btns > div:hover{
+                background-color: rgb(176 255 255 / 30%);
+            }
+            #box svg,#box img,.btns svg,.btns img{
+                width: 1.5rem;
+                height: 1.5rem;
+                display: block;
+            }
+            div#box > div.view{
+                position: relative;
+            }
+            div#box > div.view::before{
+                content: ' ';
+                background-color: #27e52d;
+                position: absolute;
+                top: 2.5em;left: 0;right: 0;
+                display: block;
+                height: 0.4rem;
+                border-radius: 0.2rem;
+                width: 0.4rem;
+                margin: auto;
+                transition: width 0.2s;
+            }
+            div#box > div.view:hover::before{
+                width: 100%;
+            }
+            div.ctx{
+                position: fixed;
+                padding: .5rem 0;
+                border-radius: 0.4rem;
+                background-color: rgb(223 223 223 / 50%);
+                width: 10rem;
+                max-width: 100vw;
+                z-index: 1;
+            }
+            div.ctx > a{
+                display: block;
+                padding: 0.5rem 1rem;
+                transition: background 0.1s;
+                margin: 0.2rem 0;
+            }
+            div.ctx > a:hover{
+                background-color: rgba(0,0,0,0.5);
+                color: white;
+            }
+            .btn-close{
+                content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>');
+                height: 1em;
+                width: 1em;
+                transform: scale(1.2) translateY(0.2rem);
+                background-color: var(--light-2);
+                float: right;
+                margin-right: 0.5rem;
+            }
+            #msg{
+                position: fixed;
+                top: 1rem;
+                right: 2rem;
+                max-width: 20rem;
+                width: 100%;
+                z-index: 10;
+            }
+            #msg > *{
+                width: 100%;
+                box-sizing: border-box;
+                padding: 0.5rem;
+                border-radius: 2rem;
+                display: flex;
+                background-color: rgb(245 245 245 / 60%);
+                margin: .5rem 0;
+            }
+            #msg b{
+                margin-right: 0.5rem;
+            }
+            #msg > *::before{
+                height: 1em;width: 1em;
+                display: inline-block;
+                margin: 0 0.5rem;
+                transform: scale(1.4) translateY(0.1em);
+            }
+            #msg .error::before{
+                content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"  fill="%23e5484d" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>');
+            }
+            #msg .success::before{
+                content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%2330a46c" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>');
+            }
+            #msg .info::before{
+                content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%23#05a2c2" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>');
+            }
+            .window{
+                position: fixed;
+                z-index: 5;
+                top: 3rem;left: 0;right: 0;
+                max-width: 30rem;
+                margin: auto;
+                border-radius: 0.5rem;
+                overflow: hidden;
+            }
+            .window::after{
+                content: '';
+                position: fixed;
+                top: 0;left: 0;
+                background-color: rgb(128 128 128 / 60%);
+                width: 100vw;height: 100vh;
+                z-index: -1;
+            }
+            .whead{
+                padding: 0.5rem 1rem;
+                color: white;
+                background-color: #51b6f1;
+            }
+            .wbody{
+                padding: 1rem;
+                background-color: white;
+                max-height:60vh;
+                overflow:auto;
+            }
+            .wtool{
+                padding: 0 1rem 0.5rem 0;
+                text-align: right;
+                background-color: white;
+            }
+            .wtool > button{
+                padding: 0.5rem 1rem;
+                border: solid 0.2rem white;
+                background-color: #b3b1b3;
+                color: white;
+                border-radius: 0.5rem;
+            }
+            .wtool > button:focus{
+                border-color: lightgray !important;
+            }
+            .wtool > button.success{
+                background-color: #40df6a;
+            }
+            .wtool > button.info{
+                background-color: #2ca0d5;
+            }
+            .wtool > button.warn{
+                background-color: #f3da2b;
+            }
+            .wtool > button.danger{
+                background-color: #ff6363;
+            }
+            .offcv{
+                display: none;
+                position:fixed;
+                display:flex;
+                flex-direction:column;
+                z-index: 8;
+            }
+            .offcv-right{
+                right:0;top:0;bottom:0;
+                max-width: 90vw;width:30rem;
+            }
+            .offcv-left{
+                left:0;top:0;bottom:0;
+            }
+            .offcv-title{
+                padding:1rem 2rem 0 2rem;
+                font-size:1.1rem;font-weight:bold;
+                background-color:white;
+            }
+            .offcv-ctx{
+                flex-grow:1;
+                overflow:auto;
+                padding:1rem 2rem;
+                background-color:white;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- vList V2~iframe版.有效减小性能损耗 -->
+        <iframe></iframe>
+        <div id="view" hidden></div>
+        <div id="box"></div>
+        <div id="msg"></div>
+        <div hidden id="ctx" class="ctx">
+            <a onclick="VIEW.contentWindow.history.back();">
+                返回上一页
+            </a>
+            <a onclick="VIEW.contentWindow.cStyle();">
+                切换暗/亮模式
+            </a>
+            <a onclick="$.tool.tool.hidden = !$.tool.tool.hidden">
+                打开/关闭帮助栏
+            </a>
+        </div>
+        <script>
+            // 初始化
+            const VIEW = document.getElementsByTagName('iframe')[0],
+                PREFIX = './';    // 静态资源存放地址
+            if(!VIEW instanceof HTMLElement)
+                throw new Error('Failed to load Document');
+            if(undefined == localStorage){
+                console.log('Warn:Your browser do not support cache.');
+                $.dialog.msg('warn','注意','你的浏览器版本太低');
+                var CONFIG = {};
+            }
+            // 初始化秘制API
+            String.prototype.splitLast = function(char){
+                let pos = this.lastIndexOf(char);
+                if(pos == -1) return [this,this];
+                return [this.substring(0,pos),this.substring(pos+1)];
+            }
+            HTMLElement.prototype.hide = function(){
+                this.style.display = 'none';
+            }
+            HTMLElement.prototype.show = function(){
+                this.style.display = null;
+            }
+            // 基类
+            const $ = {
+                list : {
+                    list : {},
+                    getype : function(ext){
+                        if(typeof ext != 'string')
+                            // throw new TypeError('argument #0 is '+typeof ext+',not string');
+                            ext = ext.toString();
+                        ext = ext.toLowerCase();
+                        for (const type1 in CONFIG.map)
+                            for (const type2 in CONFIG.map[type1])
+                                if(CONFIG.map[type1][type2].includes(ext)) return [type1,type2];
+                        return ['bin','unsupport'];
+                    },
+                    refresh : function(){
+                        var list = VIEW.contentDocument.querySelectorAll('body>table#list>tbody>tr>td.link');
+                        this.list = {"file":[],"dir":[]};
+                        for (let i = 0; i < list.length; i++){
+                            this.additem(list[i].children[0],list[i]);
+                        }
+                        console.log('Success rebuilt DB.');
+                    },
+                    additem:function(element,box){
+                        if(!element instanceof HTMLAnchorElement)
+                            throw new TypeError('Cannot add an empty element');
+                        var href    = element.href,                     // 链接地址
+                            name    = element.getAttribute('title'),    // 文件名
+                            rherf   = element.getAttribute('href'),     // 真实指向
+                            isdir   = rherf.substr(-1) == '/';          // 判断是否为文件夹
+                        if(CONFIG.debug) console.log(isdir,name);
+                        if(isdir){
+                            // 文件夹
+                            this.list.dir.push({
+                                name : name,
+                                href : href
+                            }); 
+                            box.classList.add('dir');
+                        }else if(name.toLowerCase() == 'readme.md'){
+                            box.parentElement.hidden = true;
+                            $.module.load('https://cdn.bootcdn.net/ajax/libs/marked/4.3.0/marked.min.js').then(async function(){
+                                try{
+                                    var readme = document.createElement('div');
+                                    readme.id = 'readme';
+                                    readme.innerHTML = marked.parse(await $.tool.curl(href));
+                                    VIEW.contentDocument.body.insertBefore(readme,VIEW.contentDocument.querySelector('p.copyright'));
+                                }catch(e){
+                                    console.log('网络错误:'+e.message);
+                                }
+                            });
+                        }else{
+                            // var {type1,type2}   = this.getype(name.splitLast('.')[1]);// 获取类型
+                            var ext = name.splitLast('.')[1],
+                                types = this.getype(ext),
+                                type1 = types[0] , type2 = types[1];
+                            // 1.决定是否隐藏
+                            if(CONFIG.hide.includes(type1+"/"+type2))
+                                box.parentElement.hidden = true;
+                            // 2.添加图标
+                            else
+                                box.classList.add(type1,type2);
+                            // 3.去除默认事件
+                            element.onclick = function(){return false;}
+                            // 4.推入数据库
+                            this.list.file.push({
+                                name : name,        // 全名
+                                path : href,        // URL路径
+                                type : [type1,type2]// 类型
+                            })
+                        }
+                    },
+                    match : function(base,type){
+                        var result = [];
+                        base = decodeURIComponent(base.toLowerCase());
+                        for (var i = 0; i < this.list.file.length; i++) {
+                            let now = this.list.file[i];
+                            if(
+                                (
+                                    base === '*' ||
+                                    $.tool.base(now.name).toLowerCase() == base
+                                )
+                                && now.type.includes(type)
+                            ) result.push(now);
+                        }
+                        if(CONFIG.debug) console.log('Try to find',type,base,'and',result.length,'found');
+                        return result;
+                    }
+                },
+                tool:{
+                    view : document.getElementById('view'),
+                    tool : document.getElementById('box'),
+                    add : function(svg,desc,callback){
+                        var box = document.createElement('div');
+                        box.innerHTML = svg;
+                        box.onclick = callback;
+                        box.title = desc;
+                        this.tool.append(box);
+                        return box;
+                    },
+                    box : function(id,tag,icon,callback){
+                        var box = document.createElement(tag||'div');
+                        box.classList.add('view');
+                        box.id = id;
+                        box.hidden = true;
+                        this.view.append(box);
+                        if(icon != undefined){
+                            let tag = this.add(icon,id,function(){
+                                if(CONFIG.debug) console.log(id,' state: ',box.hidden?'hidden':'showing');
+                                if(box.hidden)
+                                    $.tool.show(box);
+                                else
+                                    $.tool.view.hidden = box.hidden = true;
+                            });
+                            tag.classList.add('view');
+                            if(callback != undefined)
+                                tag.oncontextmenu = tag.ondblclick = function(){
+                                    if(CONFIG.debug) console.log(id,' ctxMenu selected.');
+                                    callback();
+                                    return false;
+                                }
+                        }
+                        return box;
+                    },
+                    show : function(box){
+                        if(!box instanceof HTMLElement)
+                            throw new TypeError('only HTMLElement should be shown');
+                        box.hidden = this.view.hidden = false;
+                    },
+                    base : function(path){
+                        if(typeof path != 'string')
+                            // throw new TypeError('base(#1) require arg#1:string,'+typeof path+' was given.');
+                            path = path.toString();
+                        return path.splitLast('/')[1].splitLast('.')[0].toString();
+                    },
+                    curl : async function(url){
+                        var fe = await fetch(url);
+                        if(!fe.ok) throw new Error(fe.status);
+                        var res = await fe.text();
+                        return res;
+                    }
+                },
+                dialog : {
+                    box : document.getElementById('msg'),
+                    // 重写rewrite属性
+                    rewrite:function(e,anim='fadeout'){
+                        if(CONFIG.animate)
+                            e.remove = function(){
+                                this.classList.add(anim);
+                                setTimeout(()=>this.parentElement.removeChild(this), 500);
+                            }
+                    },
+                    // 创建DIV池
+                    create:function(ii=3){
+                        var pool = [];
+                        for (var i = 0; i < ii; i++)
+                            pool.push(document.createElement('div')); 
+                        return pool;
+                    },
+                    // 输出一段信息
+                    msg: function(type, title, content, remove) {
+                        var e = document.createElement('div');
+                        e.classList.add(type);
+                        e.innerHTML = ` <b> ${title} </b><span style="flex-grow:1;"> ${content} </span>
+                            <span class="btn-close" onclick="this.parentElement.remove();"></span>`;
+                        this.box.append(e);
+                        if(typeof remove == 'number')
+                            setTimeout(()=>e.remove(),remove*1000);
+                        if(CONFIG.animate) this.rewrite(e);
+                        return e;
+                    },
+                    // 弹出一个交互框
+                    dialog : function(title,html,btns,noclose=false){
+                        // 创建DIV池
+                        let pool = this.create(5);
+                        // 标题
+                        pool[1].innerText = title;  // 头
+                        pool[1].classList.add('whead');
+                        if(!noclose){
+                            pool[2].classList.add('btn-close');
+                            pool[2].onclick = ()=> pool[0].remove();
+                            pool[1].append(pool[2]);
+                        }
+                        // 内容
+                        pool[3].classList.add('wbody');
+                        pool[3].innerHTML = html;
+                        // 尾部
+                        pool[0].classList.add('window');
+                        pool[0].append(pool[1],pool[3]);
+                        if(typeof btns == 'object'){
+                            pool[4].classList.add('wtool');
+                            for (let key in btns) {
+                                let prop = key.split(':'),
+                                    btn = document.createElement('button');
+                                btn.innerText = prop[0];    // 内容
+                                if(prop[1] != undefined && prop[1] != '')
+                                    btn.classList.add(prop[1]); // 按钮类
+                                btn.onclick = () => btns[key](pool[0]);
+                                pool[4].append(btn);
+                            }
+                            pool[0].append(pool[4]);
+                        }
+                        // 结束
+                        document.body.append(pool[0]);
+                        if(CONFIG.animate) this.rewrite(pool[0],'jumpout');
+                        return pool[0];
+                    },
+                    offcv:function(head,body,direction='right'){
+                        let pool = this.create(3);
+                        // 主盒子
+                        pool[0].classList.add('offcv','offcv-'+direction);
+                        // this.rewrite(pool[0]);
+                        // 标题
+                        pool[1].classList.add('offcv-title');
+                        pool[1].innerText = head;
+                        pool[1].innerHTML += '<span class="btn-close" onclick="this.parentElement.parentElement.hidden = true;"></span>';
+                        // 内容物
+                        pool[2].classList.add('offcv-ctx');
+                        pool[2].innerHTML = body;
+                        // 完成
+                        pool[0].append(pool[1],pool[2]);
+                        document.body.append(pool[0]);
+                        return pool[0];
+                    }
+                },
+                cache:{
+                    reload : async function(focus=false,norpt=false){
+                        // 初始化缓存
+                        if(undefined == localStorage.vlist || focus){
+                            let f = await fetch(PREFIX+'config.json');
+                            if(!f.ok) throw new Error('Failed to fetch.');
+                            let data = await f.json();
+                            localStorage.vlist = JSON.stringify(data);
+                            console.log('Init cache:success.');
+                        }
+                        try{
+                            window.CONFIG = JSON.parse(localStorage.vlist);
+                        }catch(e){
+                            if(!norpt){
+                                console.log('Wrong JSON.Try to fetch again.');
+                                return this.reload(true,true);
+                            }else{
+                                throw new Error('Failed to fetch&parse JSON');
+                            }
+                        }
+                    },
+                    set:function(item,val){
+                        let items = item.split('.'),
+                            target = items[items.length-1],
+                            json = JSON.parse(localStorage.vlist),
+                            now = json;
+                        delete items[items.length-1];
+                        items.forEach(n=>{
+                            now = now[e];
+                            if(now == undefined) throw new Error('undefined key'+item);
+                        });
+                        now[target]=val;
+                        localStorage.vlist = JSON.stringify(json);
+                        // 复写opener
+                        json.opener = CONFIG.opener;
+                        CONFIG = json;
+                        console.warn('config changed.it is dangerous!');
+                    }
+                },
+                init : function(){
+                    console.log('Restart VLIST service.');
+                    // 1.增加事件监听
+                    var tg = VIEW.contentDocument.getElementsByTagName('tbody')[0];
+                    if(tg == null) return setTimeout(()=>VIEW.contentWindow.history.back(),1000);
+                    tg.addEventListener('click',function(e){
+                        let tg = e.target,a;
+                        // 找到<a>标签
+                        if(tg.tagName == 'TD'){
+                            if(tg.classList.contains('link')){
+                                a = tg.children[0];
+                            }else if(tg.classList.contains('size') || tg.classList.contains('date')){
+                                a = tg.parentElement.children[0].children[0];
+                            }
+                        }else if(tg.tagName == 'A'){
+                            a = tg;
+                        }else return true;
+                        if(!a instanceof HTMLAnchorElement)
+                            throw new TypeError('Failed to match <a>');
+                        let box = a.parentElement;
+                        // 阻止继续按下
+                        box.parentElement.style.pointerEvents = 'none';
+                        // 检查是否为文件夹
+                        if(box.classList.contains('dir'))
+                            VIEW.src = a.href;    // 跳转
+                        // 获取类型并打开
+                        else $.open(a,box.classList).then(()=> box.parentElement.style.pointerEvents = 'auto');
+                        return false;
+                    });
+                    // 2.重新构建目录树
+                    $.list.refresh();
+                },
+                // openlock:false,
+                open:async function(a,type,no_callself=false){
+                    if(!a instanceof HTMLAnchorElement)
+                        throw new TypeError('Not a tag named <a>');
+                    var open;
+                    if(CONFIG.debug) console.log(a.getAttribute('title'),type[1],type[2]);
+                    if(type[2] != undefined && type[2] in CONFIG.opener){
+                        open = CONFIG.opener[type[2]];
+                    }else if(type[1] in CONFIG.opener){
+                        open = CONFIG.opener[type[1]];
+                    }else{
+                        return window.open(a.href);
+                    }
+                    // this.openlock = true;
+                    try{
+                        if(typeof open == 'string'){
+                            // if(this.openlock) return console.log('Failed:locked.');
+                            if(no_callself) throw new Error('Failed to open:code loop(maybe module contains some error?)');
+                            else {
+                                try{
+                                    await this.module.load(open);
+                                }catch(e){
+                                    $.dialog.msg('error','打开失败','依赖加载失败');
+                                }
+                                return $.open(a,type,true);            //打开文件
+                            }
+                        }else if(typeof open == 'function') return open(a.href);
+                        else throw new Error('Unknown opener(Tag:"'+type+'"&Type:"'+typeof open+'")');
+                    }catch(e){
+                        $.dialog.msg('error','打开失败',e.message);
+                        throw e;
+                    }
+                    // this.openlock = false;
+                },
+                module:{
+                    loaded:{},
+                    load:function(js,tagName='script',callback){
+                        return new Promise(function(rs,rj){
+                            var tag;
+                            if(js in $.module.loaded){
+                                if(typeof $.module.loaded[js] == 'boolean'){
+                                    return $.module.loaded[js]?rs():rj();
+                                }else{
+                                    tag = $.module.loaded[js];
+                                }
+                            }else{
+                                tag = document.createElement(tagName);
+                                tag.src = js;
+                                tag.onload = ()=> $.module.loaded[js] = true;
+                                tag.onerror = ()=>$.module.loaded[js] = false;
+                                $.module.loaded[js] = tag;
+                                if(callback) callback(tag);
+                                document.body.append(tag);
+                            }
+                            tag.addEventListener('load',e=>{
+                                if(CONFIG.debug) console.log('Load['+$.tool.base(js)+']succeed');
+                                rs(e);
+                            });
+                            tag.onerror = e=>{
+                                console.warn('Load['+$.tool.base(js)+']failed');
+                                rj(e);
+                            }
+                        });
+                        return true;
+                    },
+                    css:function(css){
+                        return this.load(css,'link',function(tag){
+                            tag.rel='stylesheet';
+                            tag.href = tag.src;
+                        });
+                    },
+                    bind:function(name,callback){
+                        if(!typeof callback == 'function')
+                            throw new TypeError('Callback must a function');
+                        CONFIG.opener[name] = callback;
+                        console.log('New module:',name);
+                    }
+                },
+                
+            };
+            // 启动监听URL
+            // (new MutationObserver(function(){
+            //     var src = VIEW.src;    // 新地址
+            //     $.init();
+            //     console.log('New location:'+src);
+            // })).observe(VIEW,{
+            //     attributeFilter:["src"]
+            // });
+            // VIEW.onerror = ()=>{
+                // if(CONFIG.debug) console.log('Load failed!Try to reload:NO.',VIEW.reloaded ++);
+                // VIEW.contentDocument.location.reload();
+                // if(VIEW.reloaded == 3) return alert('加载失败!');
+            // }
+            VIEW.addEventListener('load',function(){
+                // ctx.hidden = true;
+                if(!CONFIG.debug) console.clear();
+                $.init();
+                document.location.hash = '#'+VIEW.contentDocument.location.pathname;
+                VIEW.contentDocument.addEventListener('contextmenu', e => {
+                    let x = e.clientX + 'px',y = e.clientY + 'px',
+                        ctx = document.getElementById('ctx');
+                    if(CONFIG.debug) console.log('Dialog Menu opened.');
+                    ctx.hidden = false;
+                    ctx.style.left = x,ctx.style.top = y;
+                    VIEW.contentDocument.onclick = e => {
+                        ctx.hidden = true;
+                        VIEW.contentDocument.onclick = null;
+                        e.preventDefault();
+                    }
+                    e.preventDefault();
+                });
+                let items = VIEW.contentDocument.querySelectorAll('table#list>tbody>tr'),
+                    i = 0,
+                    select = function(ii){
+                        if(ii < 0) ii = items.length + ii;
+                        while(ii >= items.length) ii -= items.length;
+                        for(let i = 0 ; i < items.length ; i ++ ){
+                            if(i != ii)  items[i].classList.remove('focus');
+                            else{
+                                items[i].classList.add('focus');
+                                items[i].scrollIntoView();
+                            }
+                        }
+                        if(CONFIG.debug) console.log('Select item:',i = ii);
+                    };
+                VIEW.contentDocument.addEventListener('keydown',function(kbd){
+                    if(CONFIG.debug) console.log('Keyboard:',kbd.key);
+                    switch(kbd.key){
+                        case 'ArrowDown':case 'ArrowRight':
+                            // 有对话框时操作对话框
+                            select(i+1);
+                            break;
+    
+                        case 'ArrowUp':case 'AllowLeft':
+                            select(i-1);
+                            break;
+                            
+                        case 'Escape':
+                            if($.tool.view.hidden) VIEW.contentWindow.history.back();
+                            else $.tool.view.hidden = true;
+                            
+                        case 'Enter':
+                            if(CONFIG.debug) console.log('Trigged "Click" on ',
+                                items[i].getElementsByTagName('a')[0].getAttribute('title')
+                            );
+                            items[i].children[0].click();
+                            $.tool.view.focus();
+                            
+                        default:
+                            return true;
+                    }
+                    kbd.preventDefault();
+                    return false;
+                });
+            });
+            // 监听事件
+            $.tool.view.addEventListener('click',function(e){
+                if(e.target.id == 'view'){
+                    $.tool.view.hidden = true;
+                    for (var i = 0; i < $.tool.view.children.length; i++)
+                        $.tool.view.children[i].hidden = true;
+                }
+            });
+            // 初始化view
+            $.cache.reload().then(async function(){
+                var hash = document.location.hash.substring(1);
+                VIEW.src = hash == '' ? CONFIG.prefix : hash;
+                // 加载扩展
+                for (var i = 0; i < CONFIG.extension.length; i++)
+                    await $.module.load(CONFIG.extension[i]);
+                // 初始化dialog
+                if(CONFIG.animate){
+                    let style = document.createElement('style');
+                    style.innerHTML = '@keyframes fadein{from{opacity: 0;transform: translateX(-2rem);}to{opacity: 1;transform: translateX(0);}}@keyframes fadeout{from{opacity: 1;transform: translateX(0);}to{opacity: 0;transform: translateX(2rem);}}#msg > *{animation: fadein 0.3s forwards;}.fadeout{animation: fadeout 0.3s forwards !important;}@keyframes jumpin{from{opacity: 0;transform: scale(0);}to{opacity: 1;transform: scale(1);}}@keyframes jumpout{from{opacity: 1;transform: scale(1);}to{opacity: 0;transform: scale(0);}}.window{animation: jumpin 0.3s forwards;}.jumpout{animation: jumpout 0.3s forwards;}';
+                    document.body.append(style);
+                }
+            });
+        </script>
+    </body>
+</html>
