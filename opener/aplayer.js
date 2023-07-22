@@ -12,9 +12,9 @@
             if(audios[i].url == path)
                 return autoplay?player.list.switch(i):false;
         var base = $.tool.base(path),
-            res = $.list.match(base,'image').concat($.list.match('cover','image'))[0],
+            res = $.list.matchFirst(base,'image') || $.list.matchFirst('cover','image'),
             cover = res == undefined ? '' : res.path,
-            res2 = $.list.match(base,'lyrics')[0],
+            res2 = $.list.matchFirst(base,'lyrics'),
             lrc = res2 == undefined ? '' : res2.path;
         if(typeof lrc == 'string' && CONFIG.debug)
             console.log('APlayer:new lyrics inserted');
@@ -38,7 +38,7 @@
     </svg>`,'全部加入播放列表',function(){
         let music = $.list.match('*','audio');
         for (var i = 0; i < music.length; i++)
-            add(music[i].path,i==0);
+            add(music.next().path,i==0);
         this.hidden = true;
     });
     VIEW.addEventListener('load',()=>pl.hidden = false);

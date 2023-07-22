@@ -8,12 +8,12 @@
         if(typeof path != 'string')
             throw new TypeError('PATH can only be a string,but '+typeof path+' was given.');
         // 扫描字幕
-        var subs = $.list.match($.tool.base(path),'subtitle')[0],
+        var subs = $.list.matchFirst($.tool.base(path),'subtitle'),
             sub = subs == undefined ? undefined : subs.path;
         // PREFIX变了
         if(prefix != VIEW.contentDocument.location.pathname){
             // 刷新视频列表
-            vlist = $.list.match('*','video');
+            vlist = [...$.list.match('*','video')];
             // 找到当前列表
             for (var i = 0; i < vlist.length; i++) {
                 if(vlist[i].path == path) {
@@ -24,7 +24,7 @@
             prefix = VIEW.contentDocument.location.pathname;
         }
         // 刷新视频信息
-        video.subtitle.url = sub;
+        video.subtitle.url = sub || '';
         video.switchUrl(path);
         $.tool.show(vbox);
         // 刷新视频列表
@@ -34,7 +34,7 @@
                 path : vlist[i].path,
                 html : vlist[i].name
             };
-            if(vlist[i].path == path)now.default = true;
+            if(vlist[i].path == path) now.default = true;
             nList.push(now);
         }
         // video.setting.option[video.setting.option.length-1].selector = nList;
@@ -120,6 +120,9 @@
             // 加载最新artPlayer
             await $.module.load('https://cdn.jsdelivr.net/npm/artplayer@5.0.9/dist/artplayer.min.js');
             // 初始化
+            Artplayer.NOTICE_TIME = CONFIG.video.notice;
+            Artplayer.PLAYBACK_RATE = CONFIG.video.rate;
+            Artplayer.SEEK_STEP = CONFIG.video.seekStep;
             video = new Artplayer({
                 container: vbox,
                 customType: {
@@ -186,6 +189,7 @@
                 fastForward: true,
                 autoOrientation: true,
                 airplay: true,
+                autoPlayback:CONFIG.video.playback,
                 subtitle: {
                     escape: false,
                     style: {'font-size': '2rem'}
@@ -194,9 +198,10 @@
             // 自动下一个
             video.on('video:ended',function(){
                 if(loop) video.play();
-                else control.last();
+                else control.next();
             });
         }
+        (vbox.autoFocus = vbox.getElementsByTagName('video')[0]).click();
         update(path);
     });
 }

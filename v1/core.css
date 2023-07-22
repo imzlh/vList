@@ -6,9 +6,6 @@ body {
     margin: 0;
     overflow-x: hidden;
 }
-h1 {
-    display:none;
-}
 a {
     text-decoration:none;
     color:inherit;
@@ -76,7 +73,21 @@ input.so {
     border:solid 0.1rem transparent;
 }
 input.so:active {
-    border-color:gray;
+    border-color:gray;outline: none;
+}
+#content{
+    position: absolute;
+    background-color: var(--body);
+    width: 40%;min-width: 22rem;
+    right: 0;
+    border-radius: 0.5rem;
+    font-size: 1rem;font-weight: normal;
+    border: solid 0.05rem gray;
+    max-height: 60vh;
+}
+#content>a {
+    display: block;
+    padding: 0.5rem 1rem;
 }
 #switch {
     padding:0.5rem;

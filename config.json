@@ -1,8 +1,12 @@
 {
     "prefix":"/@list/",
-    "thumb_prefix":"/@thumb/",
-    "debug":false,
+    "thumb_prefix":false,
+    "debug":true,
     "animate":true,
+    "autoBack":true,
+    "search":false,
+    "autoTheme":true,
+    "globalFont":16,
     "map":{
         "text": {
             "subtitle": [
@@ -65,18 +69,31 @@
         }
     },
     "opener":{
-        "audio":"aplayer.js",
-        "video":"h5video.js",
-        "cd":"vplayer.js",
-        "image":"viewer.js",
-        "text":"highlight.js"
+        "audio":"opener/vplayer.js",
+        "video":"opener/h5video.js",
+        "cd":"opener/vplayer.js",
+        "image":"opener/viewer.js",
+        "text":"opener/highlight.js"
     },
     "extension":[
-        "fcheck.js",
-        "setting.js"
+        "module/fcheck.js",
+        "module/setting.js"
     ],
     "hide" : [
         "text/subtitle",
         "text/lyrics"
-    ]
+    ],
+    "viewer":{
+        "delay":10,
+        "zoomRatio":0.25,
+        "zoomRange":[0.01,5]
+    },
+    "video":{
+        "playback":true,
+        "notice":3000,
+        "rate":[0.8,1,1.2,1.5,2],
+        "currect":"",
+        "seekStep":10,
+        "status":{}
+    }
 }

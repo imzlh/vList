@@ -115,7 +115,7 @@
                             });
                         await zip.pipeTo(stdout);
                     }catch(e){
-                        dlg.remove();
+                        if(dlg) dlg.remove();
                         $.dialog.msg('error','失败',e.message,10);
                         if(CONFIG.debug) throw e;
                     }
