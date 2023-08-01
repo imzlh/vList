@@ -43,10 +43,9 @@
                 "mp4",
                 "mkv",
                 "avi",
-                "ts"
-            ],
-            "uspd_video": [
-                "flv"
+                "ts",
+                "flv",
+                "m3u8"
             ]
         },
         "audio": {
@@ -60,8 +59,9 @@
         },
         "image":{
             "image":[
+                "avif",
                 "webp",
-                "jpg","jpeg",
+                "jpg","jpeg","jxl",
                 "png",
                 "ico",
                 "bmp"
@@ -70,7 +70,7 @@
     },
     "opener":{
         "audio":"opener/vplayer.js",
-        "video":"opener/h5video.js",
+        "video":"opener/artplayer.js",
         "cd":"opener/vplayer.js",
         "image":"opener/viewer.js",
         "text":"opener/highlight.js"
@@ -94,6 +94,7 @@
         "rate":[0.8,1,1.2,1.5,2],
         "currect":"",
         "seekStep":10,
-        "status":{}
+        "status":{},
+        "enableAss":true
     }
 }

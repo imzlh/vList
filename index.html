@@ -464,8 +464,8 @@
                                 if(typeof callback == 'function') callback(this);
                             }
                         else e.remove = function(){
-                            this.parentElement.removeChild(this);
                             callback(this);
+                            this.parentElement.removeChild(this);
                         }
                     },
                     // 创建DIV池
@@ -525,7 +525,7 @@
                         // 结束
                         document.body.append(pool[0],pool[5]);
                         if(pool[4].children.length > 0) pool[4].children[0].focus();
-                        if(CONFIG.animate) this.rewrite(pool[0],'jumpout',function(){
+                        this.rewrite(pool[0],'jumpout',function(){
                             pool[5].remove();
                         });
                         return pool[0];
