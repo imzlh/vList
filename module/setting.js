@@ -61,6 +61,17 @@ h2.colorful::before{
     margin-right: 0.5em;
     user-select: none;
 }
+.inline-input{
+    display:flex;
+    align-items:center;
+}
+.inline-input input{
+    flex-grow: 1;
+    margin-left:2rem;
+    padding:.75rem 1.25rem;
+    background-color:lightgray;
+    border-radius:.3rem;border:none;
+}
 `;
     document.body.append(style);
     let dlg = $.dialog.offcv('设置',`
@@ -71,8 +82,11 @@ h2.colorful::before{
         <p><small>vList有黑白两色主题，启用自动根据时间切换主题</small></p>
         <p>页面自动回退 <span class="btn_switch" data-value="${CONFIG.autoBack}" data-role="set:autoBack"></p>
         <p><small>如果页面不是vList页面，自动切换上一页</small></p>
+        <p>隐藏部分文件 <span class="btn_switch" data-value="${CONFIG.autohide}" data-role="set:autohide"></p>
+        <p><small>将部分匹配的文件隐藏，一般都是字幕等无关紧要的</small></p>
         <p>页面字体大小 <span class="btn_range" data-value="${CONFIG.globalFont}" data-role="set:globalFont"></p>
         <p><small>vList全部使用字体设置大小排版，你可以借此调节缩放哦</small></p>
+        <p>启用文件操作 <span class="btn_switch" data-value="${!!(CONFIG.admin.user&&CONFIG.admin.pw)}" data-role="exec:login(val,tg)"></span></p>
         <h2 class="colorful">更多</h2>
         <div style="margin:1rem 0;" class="btns">
             <!--刷新-->
@@ -129,16 +143,15 @@ h2.colorful::before{
         if(tg.tagName != 'SPAN' || !tg.dataset.role) return true;
         if(CONFIG.debug) console.log('Clicked button(role:',tg.dataset.role,')');
         const [mode,key] = tg.dataset.role.split(':',2);
-        if(mode == 'set') $.cache.set(key,(function(){
-                let value = tg.dataset.value;
-                if(value == 'true')         return true;
-                else if(value == 'false')   return false;
-                else if(!isNaN(value))      return parseInt(value);
-                else                        return value;
-            })());
+        let value = tg.dataset.value,val = value;
+        if(value == 'true')         val = true;
+        else if(value == 'false')   val = false;
+        else if(!isNaN(value))      val = parseInt(value);
+        if(mode == 'set')           $.cache.set(key,val);
+        else if(mode == 'exec')     eval(key);
     };
     $.tool.add(`<svg viewBox="0 0 16 16">
-        <path fill="#ff3177" fill-rule="evenodd" d="M2 12.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+        <path fill="#38c577" fill-rule="evenodd" d="M2 12.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
     </svg>`,'帮助与设置',function(){
         dlg.hidden = false;
     });
@@ -146,4 +159,42 @@ h2.colorful::before{
         let tr = VIEW.contentDocument.querySelectorAll('table#list>tbody>tr');
         for (var i = 0; i < tr.length; i++) tr[i].hidden = false;
     };
+    
+    function login(val,self){
+        if(val == false){   // 退出
+            $.cache.set('admin.user',null);
+            $.cache.set('admin.pw',null);
+            $.dialog.msg('success','退出登录','成功！');
+            setTimeout(()=>document.location.reload(), 5000);
+        }else if(!CONFIG.admin.prefix){
+            $.dialog.msg('error','失败','管理员禁止了登陆');
+            self.dataset.value = false; 
+        }else{// 登陆
+            let [user,pw] = $.dialog.dialog('登陆',`
+                <p class="inline-input">用 户 <input type="user" placeholder="WebDAV用户名"></p>
+                <p class="inline-input">密 码 <input type="password" placeholder="WebDAV密码"></p>
+            `,{
+                '确定:success':function(self){
+                    let xhr = new XMLHttpRequest();
+                    let userval = user.value,pwval = pw.value;
+                    xhr.open('GET',CONFIG.admin.prefix,true,userval,pwval);
+                    xhr.onload = function(){
+                        if(this.status == 401) return $.dialog.msg('error','失败','帐户或密码错误');
+                        $.cache.set('admin.user',userval);
+                        $.cache.set('admin.pw',pwval);
+                        $.dialog.msg('success','成功','登陆成功!!');
+                        setTimeout(()=>document.location.reload(), 5000);
+                    }
+                    xhr.onerror = function(){
+                        $.dialog.msg('warn','网络错误','请重试!!');
+                    }
+                    xhr.send();
+                },'取消:info':self=>self.remove()
+            }).getElementsByTagName('input');
+        }
+    }
+    
+    if(CONFIG.admin.user&&CONFIG.admin.pw){
+        $.module.load('module/faction.js');
+    }
 })();

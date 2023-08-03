@@ -79,6 +79,7 @@
         "module/fcheck.js",
         "module/setting.js"
     ],
+    "autohide":true,
     "hide" : [
         "text/subtitle",
         "text/lyrics"
@@ -96,5 +97,9 @@
         "seekStep":10,
         "status":{},
         "enableAss":true
+    },
+    "admin":{
+        "prefix":"/@dav/",
+        "enable":false
     }
 }
