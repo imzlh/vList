@@ -7,6 +7,7 @@
     "search":false,
     "autoTheme":true,
     "globalFont":16,
+    "packerPath":"vendor/packer/",
     "map":{
         "text": {
             "subtitle": [
@@ -20,7 +21,7 @@
             ],
             "code":[
                 "php",
-                "js","css","html","xhtml",
+                "js","css",
                 "scss","ts",
                 "json","ini","xml","yaml",
                 "c","cpp","h",
@@ -33,9 +34,14 @@
             ],
             "plain": [
                 "log",
-                "txt"
+                "txt",
+                "md5",
+                "sfv",
+                "nfo","info"
             ],
-            "cd":["cue"]
+            "cd":["cue"],
+            "h5page":["html","xhtml"],
+            "h5link":["url"]
         },
         "video": {
             "video": [
@@ -43,6 +49,9 @@
                 "mp4",
                 "mkv",
                 "avi",
+                "ogv"
+            ],
+            "depvideo":[
                 "ts",
                 "flv",
                 "m3u8"
@@ -54,7 +63,13 @@
                 "aac", "m4a",
                 "opus",
                 "wav",
-                "flac"
+                "flac",
+                "ogg",
+                "caf"
+            ],"unsupport":[
+                "tak",
+                "wv",
+                "ape"
             ]
         },
         "image":{
@@ -69,15 +84,17 @@
         }
     },
     "opener":{
-        "audio":"opener/vplayer.js",
-        "video":"opener/artplayer.js",
+        "audio":"opener/aplayer.js",
+        "video":"opener/hplayer.js",
+        "depvideo":"opener/artplayer.js",
         "cd":"opener/vplayer.js",
         "image":"opener/viewer.js",
         "text":"opener/highlight.js"
     },
     "extension":[
         "module/fcheck.js",
-        "module/setting.js"
+        "module/setting.js",
+        "opener/h5api.js"
     ],
     "autohide":true,
     "hide" : [
@@ -93,8 +110,8 @@
         "playback":true,
         "notice":3000,
         "rate":[0.8,1,1.2,1.5,2],
-        "currect":"",
         "seekStep":10,
+        "seeker":true,
         "status":{},
         "enableAss":true
     },

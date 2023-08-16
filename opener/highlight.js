@@ -43,8 +43,7 @@ $.module.css('https://cdn.bootcdn.net/ajax/libs/highlight.js/11.6.0/styles/vs.mi
             await $.module.load('https://cdn.bootcdn.net/ajax/libs/highlight.js/11.6.0/highlight.min.js');
         }
         try{
-            var f = await fetch(path),
-                r = await f.text(),
+            var r = await (await fetch(path)).text(),
                 e = path.splitLast('.')[1];
                 t = (function(){
                     for (let ty in l) 
@@ -57,13 +56,12 @@ $.module.css('https://cdn.bootcdn.net/ajax/libs/highlight.js/11.6.0/styles/vs.mi
             if(CONFIG.debug) throw e;
         }
         let ru = hljs.highlight(r, {language: t }).value;
-        $.dialog.dialog('代码预览','<pre style="margin:0">'+ru+'</pre>',{
+        $.dialog.dialog('代码预览','<pre style="margin:0;font-size:.9rem;">'+ru+'</pre>',{
             "关闭:info":self=>self.remove(),
-            "编辑:success":(self)=>{
-                return alert('已经废弃');
-                // 启动编辑器
-                // window.open('vendor/edit.html#'+path);
+            "编辑:success":function(self){
+                if(!$.fs) $.dialog.msg('error','失败','编辑需要权限,请先登录!',10);
+                else $.module.load('module/edit.js').then(()=>self.remove($.edit(path,t)));
             }
-        })
+        });
     })
 }

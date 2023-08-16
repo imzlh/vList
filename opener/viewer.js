@@ -2,7 +2,7 @@
  * Open image with viewerJS
  */
 
-$.module.load('fcheck.js');
+$.module.load('module/fcheck.js');
 
 {
     let sty = document.createElement('style');
@@ -55,9 +55,8 @@ $.module.load('fcheck.js');
                 if(typeof CONFIG.thumb_prefix == 'string')
                     elem.src = img.path.replace(CONFIG.prefix,CONFIG.thumb_prefix);
                 else elem.src = img.path + '?reload=' + (elem.dataset.retry = 0);
-                elem.dataset.real = img.path;
                 elem.alt = img.name;
-                imgs.push(img.href);
+                imgs.push(elem.dataset.real = img.path);
                 elem.onerror = function(){
                     // 重新加载
                     if(this.dataset.retry < 3){
@@ -87,8 +86,8 @@ $.module.load('fcheck.js');
         },viewer;
     $.module.bind('image',async function(path){
         if(typeof Viewer == 'undefined'){
-            await $.module.css('https://cdn.bootcdn.net/ajax/libs/viewerjs/1.11.3/viewer.min.css');
-            await $.module.load('https://cdn.bootcdn.net/ajax/libs/viewerjs/1.11.3/viewer.min.js');
+            await $.module.css('https://cdn.staticfile.org/viewerjs/1.11.4/viewer.css');
+            await $.module.load('https://cdn.staticfile.org/viewerjs/1.11.4/viewer.js');
             reload();
             box.tabIndex = -1;
             $.tool.selector(box,box.children,{
@@ -99,8 +98,8 @@ $.module.load('fcheck.js');
             box.addEventListener('hidden',()=>box.focus());
         }
         if(cpath != VIEW.contentDocument.location.pathname) reload();
-        let i = imgs.indexOf(path);
-        if(i == undefined) i = 0;
-        $.tool.show(box);viewer.show();viewer.zoomTo(i);
+        let i = imgs.indexOf(path) || 0;
+        if(CONFIG.debug) console.log('Switch to image #',i);
+        $.tool.show(box);viewer.zoomTo(i);viewer.show();
     });
 }

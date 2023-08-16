@@ -139,8 +139,11 @@ input.so:active {
 }
 /*手机*/
 @media screen and (max-width:40rem){
-    thead,table#list>tbody>tr>td.size , table#list>tbody>tr>td.date , .so{
+    thead , table#list>tbody>tr>td.date , .so{
         display: none;
+    }
+    table#list>tbody>tr:has(>td.dir)>td.size {
+        display: unset;
     }
     tbody > tr{
         border: var(--item) 0.1rem solid;

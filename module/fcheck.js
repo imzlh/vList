@@ -27,7 +27,7 @@ $.tool.add(
             b.type = 'checkbox';
             b.setAttribute('style','float:left;margin-right: 1rem;transform: scale(1.4);');
             b.oninput = function(){
-            for (var i = 0; i < list.length; i++)
+                for (var i = 0; i < list.length; i++)
                     list[i].getElementsByTagName('input')[0].click();
             }
             all.append(b);
@@ -44,7 +44,7 @@ $.tool.add(
                         files.push(list[i].children[0]);// 载入到数组
                     }else{
                         files.splice(this.cid,1);     // 取消选中
-                        if(this.cid == 0) setState(false);// 全部取消
+                        if(!files.length) setState(false);// 全部取消
                     }
                 };
                 list[i].append(b);
@@ -84,7 +84,8 @@ tool.push($.tool.add(
                 self.remove();
                 if(CONFIG.debug) console.log('filelist\n',files);
                 try{
-                    await $.module.load('vendor/zip-stream.min.js');
+                    window.packer_mitm = CONFIG.packerPath;
+                    await $.module.load('vendor/packer/zip-stream.min.js');
                     var dlg = $.dialog.dialog('打包中','请耐心等待，正在打包...<pre id="pack_state" style="height:50vh;overflow:auto;"></pre>',undefined,false),
                         stdout = streamSaver.createWriteStream('packed.zip'),
                         ps = document.getElementById('pack_state'),

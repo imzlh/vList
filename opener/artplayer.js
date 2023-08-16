@@ -49,19 +49,20 @@
         });
         // 字幕选项
         art.subtitle.realurl = sub;
+        let video = vbox.getElementsByTagName('video')[0];
         if(CONFIG.video.enableAss && sub && sub.splitLast('.')[1].toLowerCase() == 'ass') {
             // 启用libass渲染
-            if(CONFIG.debug) console.log('restart subtitle-module using libASS');
             initAss(sub);
             art.setting.update({
                 name:'libass',
                 switch:true
             });
         }else{
-            if(ass)
+            if(ass) ass.destroy();
+            video.innerHTML = '';
             // 使用art解析
             if(CONFIG.debug) console.log('restart subtitle-module using ARTparser');
-            art.subtitle.switch(sub || 'vendor/blank.vtt');
+            art.subtitle.switch(sub || 'vendor/video/blank.vtt');
             art.setting.update({
                 name:'libass',
                 switch:false
@@ -151,7 +152,7 @@
             }
         }
     },initAss = async function(path){
-        await $.module.load('vendor/libass.js');
+        await $.module.load('vendor/video/libass.js');
         if(ass){
             ass.destroy();ass=null;
             if(CONFIG.debug) console.log('libASS destroy.Restarting...');
@@ -159,7 +160,8 @@
         let text = await (await fetch(path)).text();
         if(CONFIG.debug) console.log('new url:',path);
         ass = new ASS(text, vbox.getElementsByTagName('video')[0],{
-            container: vbox.getElementsByClassName('art-video-player')[0]
+            container: vbox.getElementsByClassName('art-video-player')[0],
+            resampling: 'script_width'
         });
         ass.url = path;
     };
@@ -168,10 +170,10 @@
         // 初始化art
         if(art == undefined){
             // 初始化盒子尺寸
-            vbox = $.tool.box('video-artplayer','div',`<img src="vendor/artplayer.webp">`);
+            vbox = $.tool.box('video-artplayer','div',`<img src="https://cdn.jsdelivr.net/gh/zhw2590582/ArtPlayer/images/logo.png">`);
             vbox.style.width = '80vw',vbox.style.height = '45vw';
             // 加载最新artPlayer
-            await $.module.load('https://unpkg.com/artplayer/dist/artplayer.js');
+            await $.module.load('https://cdn.staticfile.org/artplayer/5.0.9/artplayer.min.js');
             await $.module.load('module/fpicker.js');// 依赖
             // 初始化
             Artplayer.NOTICE_TIME = CONFIG.video.notice;
@@ -196,6 +198,29 @@
                         </i>`,
                         tooltip: '上一个视频',
                         click  : ()=>control.last()
+                    },{
+                        name    : 'forward',
+                        index   : 15,
+                        position: 'left',
+                        html    : `<i class="art-icon">
+                            <svg width="22" height="22" viewBox="0 0 16 16">
+                                <path d="M7.596 7.304a.802.802 0 0 1 0 1.392l-6.363 3.692C.713 12.69 0 12.345 0 11.692V4.308c0-.653.713-.998 1.233-.696l6.363 3.692Z"/>
+                                <path d="M15.596 7.304a.802.802 0 0 1 0 1.392l-6.363 3.692C8.713 12.69 8 12.345 8 11.692V4.308c0-.653.713-.998 1.233-.696l6.363 3.692Z"/>
+                            </svg>
+                        </i>`,
+                        tooltip : '快进(+'+CONFIG.video.seekStep+'s)',
+                        click   : () => art.forward = CONFIG.video.seekStep
+                    },{
+                        name    : 'backward',
+                        index   : 8,
+                        position: 'left',
+                        html    : `<i class="art-icon">
+                            <svg viewBox="0 0 20 20" width="22" height="22">
+                                <path d="M7.712 4.819A1.5 1.5 0 0110 6.095v2.973c.104-.131.234-.248.389-.344l6.323-3.905A1.5 1.5 0 0119 6.095v7.81a1.5 1.5 0 01-2.288 1.277l-6.323-3.905a1.505 1.505 0 01-.389-.344v2.973a1.5 1.5 0 01-2.288 1.276l-6.323-3.905a1.5 1.5 0 010-2.553L7.712 4.82z"></path>
+                            </svg>
+                        </i>`,
+                        tooltip : '快退(-'+CONFIG.video.seekStep+'s)',
+                        click   : () => art.backward = CONFIG.video.seekStep
                     },{
                         name    :'next',
                         index   : 20,
@@ -253,33 +278,20 @@
                         switch:false,
                         onSwitch:function(item){
                             if( item.switch ){   // 关闭
-                                if(ass){
-                                    ass.hide();
-                                    item.tooltip = '显示libass渲染得字幕';
-                                }else{
-                                    art.subtitle.url = 'vendor/blank.vtt';
-                                    item.tooltip = '选取新字幕到art';
-                                }
-                                // item.switch = false;
+                                ass?ass.hide():art.subtitle.url = 'vendor/video/blank.vtt';
+                                item.tooltip = '显示/启用字幕';
                             }else{                // 打开
-                                if(ass){
-                                    ass.show();
-                                    item.tooltip = '隐藏libass渲染的字幕';
-                                }else{
-                                    $.list.pick('subtitle').then(res=>{
+                                ass?ass.show():$.list.pick('subtitle').then(res=>{
                                         art.subtitle.switch(res[0]);
-                                        item.tooltip = '关闭art解析的字幕';
                                         art.subtitle.realurl = res[0];
                                     });
-                                }
-                                // item.switch = true;
+                                item.tooltip = '隐藏/关闭字幕';
                             }
                             return !item.switch;
-                            // setTimeout(()=>item.switch = !item.switch, 100);
                         }
                     },{
                         html:'ASS字幕',
-                        tooltip:'启用libass',
+                        tooltip:'启用libass渲染',
                         name:'libass',
                         icon:`<i class="art-icon">
                             <svg wdth="22" height="22" viewBox="0 0 16 16">
@@ -288,7 +300,7 @@
                         </i>`,
                         switch:false,
                         onSwitch:function(item){
-                            if(item.switch && ass){ // 关闭：销毁libass换用art
+                            if(item.switch && ass){ // 关闭：销毁libass/浏览器解析vtt换用art
                                 art.subtitle.switch(ass.url);
                                 ass.destroy();ass=null;
                                 item.tooltip = '正在使用art解析',
@@ -301,7 +313,7 @@
                                 let subtype = art.subtitle.realurl.splitLast('.')[1].toLowerCase();
                                 if( subtype == 'ass'){
                                     initAss(art.subtitle.realurl);              // 初始化libass
-                                    art.subtitle.url = 'vendor/blank.vtt',  // 销毁字幕
+                                    art.subtitle.url = 'vendor/video/blank.vtt',  // 销毁字幕
                                     item.tooltip = '正在使用libass渲染';
                                 }else{
                                     art.notice.show = '失败:没有或者不是ASS字幕!';
@@ -335,6 +347,28 @@
                 if(loop) art.play();
                 else control.next();
             });
+            // 跳转控制器
+            if(CONFIG.video.seeker)
+                art.once('ready',()=>art.setting.add({
+                    html:'跳转时间',
+                    tooltip:'到:',
+                    icon:`<i class="art-icon">
+                        <svg width="22" height="22" viewBox="0 0 16 16">
+                            <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.27l.493-.87a8.025 8.025 0 0 1 .979.654l-.615.789a6.996 6.996 0 0 0-.418-.302zm1.834 1.79a6.99 6.99 0 0 0-.653-.796l.724-.69c.27.285.52.59.747.91l-.818.576zm.744 1.352a7.08 7.08 0 0 0-.214-.468l.893-.45a7.976 7.976 0 0 1 .45 1.088l-.95.313a7.023 7.023 0 0 0-.179-.483zm.53 2.507a6.991 6.991 0 0 0-.1-1.025l.985-.17c.067.386.106.778.116 1.17l-1 .025zm-.131 1.538c.033-.17.06-.339.081-.51l.993.123a7.957 7.957 0 0 1-.23 1.155l-.964-.267c.046-.165.086-.332.12-.501zm-.952 2.379c.184-.29.346-.594.486-.908l.914.405c-.16.36-.345.706-.555 1.038l-.845-.535zm-.964 1.205c.122-.122.239-.248.35-.378l.758.653a8.073 8.073 0 0 1-.401.432l-.707-.707z"/>
+                            <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0v1z"/>
+                            <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z"/>
+                        </svg>
+                    </i>`,
+                    range:[0 , 0 , 1 , 0.01],
+                    onChange:function(item){
+                        if(!item.timer) setTimeout(function() {
+                            if(CONFIG.debug) console.log('Seek to',item.range);
+                            art.seek = item.range * art.duration;
+                            item.timer = null;
+                        }, 500);
+                        return '到:';
+                    }
+                }));
             // 调整大小
             art.on('resize',()=>ass?ass.resize():null);
         }

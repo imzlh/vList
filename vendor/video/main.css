@@ -1,0 +1,222 @@
+.vp_container{
+    position: relative;
+    display: inline-flex;align-items: center;justify-content: center;
+    overflow: hidden;background-color: #585858cc;
+}
+.vp_fullscreen{
+    position: fixed !important;
+    top: 0;left: 0;right: 0;bottom: 0;
+    width: unset !important;height: unset !important;
+    max-width: none !important;min-width: auto !important;
+    max-height: none !important;min-height: auto !important;
+    /*inset: 0;*/
+}
+.vp_video_box{
+    display: inline-block;
+    max-width: 100%;max-height: 100%;
+    width: auto !important;height: auto !important;
+}
+.vp_video_box > *{
+    pointer-events: none;
+}
+.vp_video_box > *:not(.vp_video_box){
+    position: absolute;top: 0;left: 0;
+}
+.vp_video{
+    width: 100%;height: 100%;position: static !important;
+    min-width: 30rem;
+}
+.vp_layer>div{
+    position: absolute;
+    transition: transform .5s;
+}
+.vp_layer.vp_active > div,.vp_layer > div:hover{
+    transform: translateY(0);
+}
+.vp_toplayer{
+    top: 0;left: 0;right: 0;z-index: 10;
+    transform: translateY(-110%);
+    background-image: linear-gradient(black,#424242c7,transparent);
+    text-align: center;
+    padding: .5rem 0 1rem 0;
+    color: white;
+}
+.vp_bottomlayer{
+    bottom: 0;left: 0;right: 0;z-index: 10;
+    transform: translateY(100%);
+    background-image: linear-gradient(transparent,#424242c7,black);
+}
+.vp_time{
+    position: absolute;
+    top: -2rem;left: 0;right: 0;
+    padding: .5rem;
+}
+.vp_time > *{
+    color: white;
+    opacity: .6;
+}
+.vp_time_total{
+    float: right;
+}
+.vp_bottomlayer > .vp_btns > div{
+    display: inline-block;
+    margin: 0 .25rem;
+}
+.vp_btns{
+    padding: .5rem .5rem .25rem .5rem;
+}
+.vp_btns > div:hover svg,.vp_time > *:hover{
+    opacity: 1;
+}
+.vp_btns > .vp_item_right{
+    float: right;
+    transform: scale(.8);
+}
+.vp_btns > div > svg{
+    pointer-events: none;
+    display: block;
+    width: 1.5rem;height: 1.5rem;
+    fill: white;
+    opacity: .6;
+    transition: opacity .2s;
+}
+.vp_progress{
+    border-radius: 0.25rem;
+    background-color: #e1e1e1;
+    position: relative;top: -.2rem;
+    opacity: .6;transition: opacity .2s;
+}
+.vp_progress > div{
+    background-color: rgb(69, 149, 214);
+    border-radius: 0.2rem;
+    height: 0.2rem;
+    width: 0.2rem;
+    position: relative;
+    transition: height .1s;
+}
+.vp_progress:hover{
+    opacity: 1;
+}
+.vp_progress:hover >div{
+    height: .5rem;min-width: .5rem;
+}
+.vp_progress:hover > div::after{
+    display: block !important;
+}
+.vp_progress > div::after{
+    content: '';
+    float: right;
+    position: absolute;
+    top: -.3rem;
+    right: -.5rem;
+    height: 1rem;
+    width: 1rem;
+    border-radius: 0.5rem;
+    display: none;
+    background-color: white;
+    border: solid 1px gray;
+}
+.vp_has_dialog{
+    position: relative;
+    box-sizing: border-box;
+}
+.vp_dialog{
+    position: absolute;bottom: 3rem;right: 0;
+    z-index: 10;
+    border-radius: .25rem;
+    background-color: #02020280;
+    transform: scale(0);
+    transform-origin: right bottom;
+    opacity: .2;
+    transition: transform .2s,opacity.2s;
+    width: 15rem;max-height: 25rem;
+    overflow-y: auto;overflow-x: hidden;
+}
+.vp_dialog:hover{
+    transform: scale(1);opacity: 1;
+}
+.vp_dialog > div{
+    display: flex;
+    align-items: center;
+    transition: background .2s;
+}
+.vp_dialog > div:hover{
+    background-color: gray;
+}
+.vp_dialog svg{
+    flex-shrink: 0;
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: .5rem;
+    fill: white;
+}
+.vp_dialog span{
+    flex-grow: 1;
+    color: white;
+    padding-right: .5rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    /*word-break: break-all;*/
+}
+.vp_dialog_left{
+    right: unset;left: 0;
+    transform-origin: left bottom;
+}
+.vp_has_dialog:focus > svg{
+    opacity: 1 !important;
+}
+.vp_has_dialog:focus .vp_dialog{
+    transform: scale(1);opacity: 1;
+}
+.vp_checkbox > div *,.vp_dialog > .vp_check *{
+    pointer-events: none;
+}
+.vp_checkbox > div::before,.vp_dialog > .vp_check.checked::before{
+    content: '';
+    display: inline-block;
+    width: 1.5rem;height: 1.5rem;
+    padding: .5rem;
+    flex-shrink: 0;
+}
+.vp_checkbox > .selected::before,.vp_dialog > .vp_check.checked::before{
+    content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/></svg>');
+}
+.vp_dialog > .vp_check.checked svg{
+    display: none;
+}
+.vp_dialog > .vp_range{
+    position: relative;margin-bottom: 2rem;
+}
+.vp_dialog > .vp_range > .vp_checkbox{
+    display: flex;
+    position: absolute;bottom: -2rem;left: 2rem;right: .5rem;
+    border: solid .1rem gray;
+    border-radius: .35rem;
+}
+.vp_range > .vp_checkbox > div{
+    padding: .35rem 0;
+    text-align: center;
+    transition: all .2s;
+}
+.vp_range > .vp_checkbox > .selected{
+    background-color: Aqua;
+    color: white;
+}
+.vp_alert{
+    position: absolute;z-index: 20;
+    /*inset兼容性太差劲了...*/
+    top: -5rem;left: 1rem;
+    display: inline-block;margin: auto;
+    padding: .5rem 1rem;border-radius: .35rem;
+    background-color: #00000088;
+    transition: top .3s;
+    color: white;
+}
+.vp_alert.vp_active{
+    top: 1rem;
+}
+.vp_alert:hover{
+    top: 1rem !important;
+}

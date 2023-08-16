@@ -59,68 +59,34 @@ css.innerHTML = `
     }
     #ctx span{
         float: right;
-        color: gray;
         font-size: small;
-        opacity: 0.6;
+        opacity: 0.4;
     }
     #ctx p{
         cursor:pointer;
     }
     .file-btns{
-        margin:0 .25rem;
+        padding:0 .25rem;
     }
     .file-btns>p {
-        padding: .5rem;
-        margin: .25rem;
+        padding: .75rem;
+        margin: 0 .25rem;
     }
     .file-btns svg{
-        margin:0 1rem;
+        transform:scale(1.5) !important;
+        margin:0 !important;
     }
     .file-btns>p:hover {
-        background-color: #dfe1e1;
+        background-color: rgb(188 188 188 / 50%);
         border-radius: .3rem;
     }
 `;
 document.body.append(css);
 
 // 初始化API
-$.fs = {
-    _get:()=>VIEW.contentDocument.location.pathname.replace(CONFIG.prefix,CONFIG.admin.prefix),
-    _ajax:function(method,path,rs,rj,header){
-        let xhr = new XMLHttpRequest();
-        xhr.open(method.toUpperCase(),path,true,CONFIG.admin.user,CONFIG.admin.pw);
-        if(typeof header == 'object')
-            for(let name in header)
-                xhr.setRequestHeader(name,header[name]);
-        xhr.onerror = e => rj(e),xhr.onload =  e => Math.floor(xhr.status/100) == 2 ? rs(e) : rj(e);
-        if(CONFIG.debug) console.log('New XHR created.',xhr);
-        return xhr;
-    },
-    write:(path,stream,progress)=>new Promise(function(rs,rj){
-        let xhr = $.fs._ajax('PUT',path,rs,rj);
-        if(progress instanceof HTMLElement)
-            xhr.upload.onprogress = function(e){
-                if(!e.lengthComputable) return;
-                let prog = e.loaded / e.total * 100;
-                progress.style.width = prog + '%';
-            };
-        xhr.send(stream);
-        return xhr;
-    }),
-    delete : path=>new Promise((rs,rj)=>
-        $.fs._ajax('DELETE',path,rs,rj).send()
-    ),
-    cm:(type,from,to)=>new Promise((rs,rj)=>
-        $.fs._ajax(type,from,rs,rj,{
-            Destination:to
-        }).send()
-    ),
-    mkdir:path=>new Promise((rs,rj)=>
-        $.fs._ajax('MKCOL',path,rs,rj).send()
-    )
-};
-
 (async function(){
+    // 导入模块
+    await $.module.load('module/davfs.js');
     // 初始化配置
     var flist = [],action = 'copy';
     // 创建一个文件选择框
@@ -185,6 +151,7 @@ $.fs = {
         fl = flist,flist = [];if(CONFIG.debug) console.log('Try to paste',fl);
         for (let file of fl)
             try{
+                if(file == path) continue;
                 await $.fs.cm(action,
                     file.replace(CONFIG.prefix,CONFIG.admin.prefix),    // 来源
                     (path + (file.splitLast('/')[1]=='' ? file.splitLast('/')[0].splitLast('/')[1]+'/' : file.splitLast('/')[1]))
@@ -344,8 +311,9 @@ $.fs = {
         async function start(event,dir){
             let fpath = event.dataTransfer.getData('text/fdurl'),
                 fname = event.dataTransfer.getData('text/fdname'),
-                target = dir.replace(CONFIG.prefix,CONFIG.admin.prefix)+fname,
-                dial = $.dialog.msg('info','拖拽移动','正在操作中...');
+                target = dir.replace(CONFIG.prefix,CONFIG.admin.prefix)+fname;
+            if(fpath == target) return;
+            let dial = $.dialog.msg('info','拖拽移动','正在操作中...');
             try{
                 await $.fs.cm('move',fpath,target);
                 VIEW.contentDocument.location.reload();
@@ -355,7 +323,9 @@ $.fs = {
                 dial.remove();
             }
         }
-        let elem = VIEW.contentDocument.querySelectorAll('body>table#list>tbody>tr');
+        let elem = VIEW.contentDocument.querySelectorAll('body>table#list>tbody>tr'),
+            bread = VIEW.contentDocument.getElementById('bread');
+        if(!elem || !bread) return false;
         for(let ele of elem)
             ele.draggable = true,
             ele.ondragstart = event=>{
@@ -382,7 +352,7 @@ $.fs = {
                 }else return !$.dialog.msg('error','拖拽','无效的拖拽',10);
                 return false;
             };
-        for(let title of VIEW.contentDocument.getElementById('bread').children){
+        for(let title of bread.children){
             title.tabIndex = -1;
             title.ondragenter = title.ondragover = ()=>!!title.focus();
             title.ondrop = function(e){
@@ -403,33 +373,53 @@ $.fs = {
             <p>2021~2023 izcopyright(C)</p>
         `);
     }
+    // 获取链接
+    function getLink(a){
+        if(a.parentElement.classList.contains('dir')) return $.dialog.msg('warn','获取失败','目录没有直链!',10);
+        $.dialog.dialog('链接',`
+            <p>文件：${a.getAttribute('title')}</p>
+            <p><b>解析链接如下:</b></p>
+            <textarea style="width: 100%;height: 10rem;border: none;padding: 0.75rem;box-sizing: border-box;display: block;background: whitesmoke;border-radius: 0.5rem;">${a.href}</textarea>
+        `,{
+            '复制:success':function(self){
+                try{
+                    let text = self.getElementsByTagName('textarea')[0];
+                    text.select();document.execCommand ('copy');text.blur();
+                    $.dialog.msg('success', '复制成功', '不要用到奇怪的地方哦',5);
+                }catch(e){
+                    $.dialog.msg('error','失败','复制出错，请手动复制',10);
+                    throw e;
+                }
+            },'关闭:info':self=>self.remove()
+        })
+    }
     // 右键
     let ctx = document.getElementById('ctx');
     ctx.innerHTML = `
 <div class="file-btns">
     <p data-title="删除文件(夹)" data-click="del([target]);">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <svg fill="none" stroke="#e41818" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
         </svg>
     </p>
     <p data-title="复制文件(夹)" data-click="flist=[target.href],action='copy';">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <svg fill="none" stroke="#62b265" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"></path>
         </svg>
     </p>
     <p data-title="剪切文件(夹)" data-click="flist=[target.href],action='move';">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <svg fill="none" stroke="#a96be2" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M7.848 8.25l1.536.887M7.848 8.25a3 3 0 11-5.196-3 3 3 0 015.196 3zm1.536.887a2.165 2.165 0 011.083 1.839c.005.351.054.695.14 1.024M9.384 9.137l2.077 1.199M7.848 15.75l1.536-.887m-1.536.887a3 3 0 11-5.196 3 3 3 0 015.196-3zm1.536-.887a2.165 2.165 0 001.083-1.838c.005-.352.054-.695.14-1.025m-1.223 2.863l2.077-1.199m0-3.328a4.323 4.323 0 012.068-1.379l5.325-1.628a4.5 4.5 0 012.48-.044l.803.215-7.794 4.5m-2.882-1.664A4.331 4.331 0 0010.607 12m3.736 0l7.794 4.5-.802.215a4.5 4.5 0 01-2.48-.043l-5.326-1.629a4.324 4.324 0 01-2.068-1.379M14.343 12l-2.882 1.664"></path>
         </svg>
     </p>
     <p data-title="重命名文件(夹)" data-click="rename(target);">
-        <svg fill="currentColor" viewBox="0 0 16 16">
+        <svg fill="#ed8c15" viewBox="0 0 16 16">
             <path d="M10 5h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4v1h4a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4v1zM6 5V4H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4v-1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4z"/>
             <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13A.5.5 0 0 1 8 1z"/>
         </svg>
     </p>
-    <p data-title="获取链接" data-click="$.dialog.dialog('链接')">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <p data-title="获取链接" data-click="getLink(target)">
+        <svg fill="none" stroke="#6c99ea" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"></path>
         </svg>
     </p>
@@ -442,21 +432,21 @@ $.fs = {
     <span>^V</span>
 </p>
 <p data-click="VIEW.contentWindow.history.back();">
-    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+    <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"></path>
     </svg>
     回退
     <span>ESC</span>
 </p>
 <p data-click="VIEW.contentDocument.location.reload();">
-    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
     </svg>
     刷新
     <span>F5</span>
 </p>
 <p data-click="about()">
-    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"></path>
     </svg>
     关于
