@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>vFileBox</title>
+        <title>vList--加载中...</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="manifest" href="manifest.json" />
@@ -850,6 +850,8 @@
                     = CONFIG.globalFont + 'px';
                 $.cache.onChange('globalFont',changeFontSize);
                 changeFontSize();
+                // 页面标题
+                document.title = CONFIG.title;
                 // 初始化主题
                 let theme = ['dark','white'];
                 if(!theme.includes(sessionStorage.mode) && CONFIG.autoTheme){
