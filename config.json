@@ -1,11 +1,15 @@
 {
     "prefix":"/@list/",
     "thumb_prefix":false,
-    "debug":true,
+    "debug":false,
+    "version":3.2,
+    "alert":"欢迎来到izCloud!<br><a href='https://io.imzlh.top:8443/'>备用站点</a>",
+    "alert_delay":5000,
     "animate":true,
     "autoBack":true,
     "search":false,
     "autoTheme":true,
+    "autohide":true,
     "globalFont":16,
     "packerPath":"vendor/packer/",
     "map":{
@@ -94,9 +98,9 @@
     "extension":[
         "module/fcheck.js",
         "module/setting.js",
-        "opener/h5api.js"
+        "opener/h5api.js",
+        "module/adalert.js"
     ],
-    "autohide":true,
     "hide" : [
         "text/subtitle",
         "text/lyrics"

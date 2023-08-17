@@ -5,10 +5,10 @@ class vp_list extends Array{
         this.i = -1;
     }
     
-    match(value,prefix){
+    match(object,prefix){
         for(let [i,obj] of this.entries())
-            if(obj[prefix||'path'] == value) return i;
-        return null;
+            if(obj[prefix || 'path'] == object[prefix || 'path']) return i;
+        return false;
     }
     
     get(i){
@@ -16,7 +16,7 @@ class vp_list extends Array{
     }
     
     push(obj){
-        if(this.match(obj)) return;
+        if(this.match(obj) !== false) return;
         else super.push(obj);
     }
     
@@ -44,6 +44,8 @@ class vp{
     set element(elem){
         // 初始化元素
         this.container = elem,this.video = this.$('video')[0];
+        this.container.tabIndex = -1;
+        this.container.focus();
         this.e = {
             top       : this.$('toplayer')[0],
             bottom    : this.$('bottomlayer')[0],
@@ -124,22 +126,21 @@ class vp{
             self.video.volume = this.value;
         };
         if(!document.fullscreenEnabled) this.e.func.requestfs.parentElement.hidden = true;
+        let fullscreen = this.container.onfullscreenchange = function(e){
+            if(document.fullscreen || e === true) 
+                self.e.func.requestfs.style.display = 'none',self.e.func.exitfs.style.display = 'block';
+            else self.e.func.requestfs.style.display = 'block',self.e.func.exitfs.style.display = 'none';
+        };
         this.e.func.requestfs.parentElement.onclick = function(){
-            if(document.fullscreen){
+            if(document.fullscreen)
                 document.exitFullscreen();
-                self.e.func.requestfs.style.display = 'block',
-                self.e.func.exitfs.style.display = 'none';
-            }else{
-                try{
-                    self.container.requestFullscreen();
-                }catch(e){
-                    // 使用妥协的方法全屏
-                    this.container.classList.contains('vp_fullscreen')?
-                        this.container.classList.remove('vp_fullscreen'):
-                        this.container.classList.add('vp_fullscreen');
-                }
-                self.e.func.requestfs.style.display = 'none',
-                self.e.func.exitfs.style.display = 'block';
+            else try{
+                self.container.requestFullscreen();
+            }catch(e){
+                // 使用妥协的方法全屏
+                self.container.classList.contains('vp_fullscreen')?
+                    fullscreen(self.container.classList.remove('vp_fullscreen')):
+                    fullscreen(!self.container.classList.add('vp_fullscreen'));
             }
         };
         this.$('func_speed')[0].onchange = function(value){
@@ -157,6 +158,45 @@ class vp{
         this.e.playlist.onchange = ()=>void false;
         this.$('func_loop')[0].onchange = state => self.video.loop = state;
         this.$('func_screenshot')[0].onclick = ()=>this.cat();
+        // ===================== 键盘事件 =====================
+        this.container.onkeydown = function(e){
+            let dur = self.video.duration * 0.01;
+            dur = dur < 10 ? 10 : Math.floor(dur);
+            function setVol(add){
+                let vol = self.video.volume + add;
+                if(vol >= 1) self.video.volume = 1;
+                else if(vol <= 0) self.video.volume = 0;
+                else self.video.volume = vol;
+            }
+            switch (e.code) {
+                case 'ArrowDown':
+                    setVol(-0.1);
+                    break;
+                
+                case 'ArrowUp':
+                    setVol(0.1);
+                    break;
+                    
+                case 'ArrowLeft':
+                    self.alert('< 快退 '+dur+' 秒');
+                    self.video.currentTime -= dur;
+                    break;
+                
+                case 'ArrowRight':
+                    self.alert('> 快进 '+dur+' 秒');
+                    self.video.currentTime += dur;
+                    break;
+                
+                case 'Enter':
+                case 'Space':
+                    self.video.paused?self.video.play():self.video.pause();
+                    break;
+                    
+                default:
+                    return true;
+            }
+            return e.preventDefault() && e.stopPropagation();
+        };
         // ===================== 监听大小变化 =================
         let lastW,lastH;
         self.resize = setInterval(function(){
@@ -166,7 +206,7 @@ class vp{
                 lastH = self.e.vcontainer.clientHeight;
                 if(self.e.vcontainer.onresize) self.e.vcontainer.onresize();
             }
-        },1000)
+        },1000);
         // ===================== 启用特性 =====================
         // 初始化dialog
         for(let element of this.$('has_dialog'))
@@ -245,19 +285,15 @@ class vp{
     add(info){
         if(typeof info != 'object' || typeof info.path != 'string')
             throw new TypeError('Please check your params.');
-        if(this.list.match(info)){
-            for(let child of this.e.playlist.children)
-                if(child.dataset.value == info.path) return child;
-            throw new Error('System Error.');
-        }
+        if(this.list.match(info) !== false) return this.list[this.list.match(info)].element;
         let id = this.list.length;
-        this.list.push(info);
-        let element = document.createElement('div'),span = document.createElement('span'),
+        let element = info.element = document.createElement('div'),span = document.createElement('span'),
             self = this;
         element.append(span);this.e.playlist.append(element);
         span.innerText = info.name || decodeURIComponent(info.path.substring(info.path.lastIndexOf('/')+1)),
         element.dataset.value = info.path,element.onclick = 
-            ()=>{self.list.i = id;self.use(info);}
+            ()=>{self.list.i = id;self.use(info);};
+        this.list.push(info);
         return element;
     }
     
@@ -328,9 +364,7 @@ class vp{
                         self.ass.resize();  // 延迟调整大小
                     }, 100);
                 }
-                resize();
-                self.e.vcontainer.onfullscreenchange = ()=>resize(),
-                self.e.vcontainer.onresize = resize;
+                (self.e.vcontainer.onresize = resize)();
                 self.alert('ASS字幕解析成功!');
             }else if(ext == 'vtt'){     // 使用浏览器自带的
                 // self._blob = await xhr.blob();

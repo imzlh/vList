@@ -189,7 +189,7 @@ h2.colorful::before{
                         $.cache.set('admin.user',userval);
                         $.cache.set('admin.pw',pwval);
                         $.dialog.msg('success','成功','登陆成功!!');
-                        setTimeout(()=>document.location.reload(), 5000);
+                        setTimeout(()=>document.location.reload(), 2000);
                     }
                     xhr.onerror = function(){
                         $.dialog.msg('warn','网络错误','请重试!!');

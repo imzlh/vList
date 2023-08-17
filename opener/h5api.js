@@ -12,11 +12,11 @@ td.link.h5link::before {
     left: 1.75rem;
     z-index: 1;
 }`;
-    VIEW.contentDocument.body.append(style);
     let load = async function(){
         // await $.module.load('module/lightnode.js');
         // const INI = await $.module.require('https://cdn.jsdelivr.net/npm/ini/lib/ini.min.js');
         await $.module.load('vendor/libini.js');
+        VIEW.contentDocument.body.append(style);
         for(let element of VIEW.contentDocument.querySelectorAll('body>table#list>tbody>tr>td.link.h5link'))
             try{
                 let a = element.getElementsByTagName('a')[0],
@@ -32,7 +32,7 @@ td.link.h5link::before {
                     element.insertBefore(elem,element.children[0]);
                 }
                 a.innerText = a.getAttribute('title').splitLast('.')[0],
-                a.href = target + '!' + ( parseInt(type) == 3 ? 'max' : 'min' );
+                a.href = target + '!' + type;
             }catch(e){console.error(e);}
     };
     load();
@@ -47,8 +47,9 @@ td.link.h5link::before {
     };
     $.module.bind('h5link',function(path){
         let [href,type] = path.splitLast('!');
-        if(type == 'min') open(href);
-        else window.open(href);
+        if(type == '3')         open(href);
+        else if(type == '7')    window.open(href);
+        else document.location.href = href;
     });
     $.module.bind('h5page',open);
 }

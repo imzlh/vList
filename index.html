@@ -10,6 +10,24 @@
                 overflow: hidden;
                 margin: 0;
             }
+            ::-webkit-scrollbar {
+                border-radius: 1rem;
+                background-color: #d8d7d733;
+                width: .5rem;
+            }
+            ::-webkit-scrollbar-thumb {
+                background-color: #c9c6c680;
+                border-radius: 1rem;
+            }
+            ::-webkit-scrollbar-thumb:hover{
+                background-color: #ece9e9cc;
+            }
+            ::-webkit-scrollbar:hover{
+                width: 1rem;
+            }
+            * {
+                scrollbar-track-color: none;
+            }
             iframe{
                 width: 100vw;height: 100vh;
                 border: none;
@@ -227,8 +245,7 @@
         </div>
         <script>
             // 初始化
-            const VIEW = document.getElementsByTagName('iframe')[0],
-                VERSION = "0.1.0~dev";    // 版本号
+            const VIEW = document.getElementsByTagName('iframe')[0];
             if(!VIEW instanceof HTMLElement)
                 throw new Error('Failed to load Document');
             if(undefined == localStorage){
@@ -619,7 +636,7 @@
                             else $.dialog.msg('warn','警告','请尝试在下方工具栏中刷新缓存',10);
                         throw new Error('An NON-VLIST1-PAGE-ERROR trigged.');
                     }else this.loaded++;
-                    if(CONFIG.debug) console.log('debug:true,loaded:',this.loaded,',version:',VERSION);
+                    if(CONFIG.debug) console.log('debug:true,loaded:',this.loaded,',version:',CONFIG.version);
                     tg.addEventListener('click',function(e){
                         let a = $._find(e.target);
                         if(!a) return;

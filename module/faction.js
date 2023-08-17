@@ -109,7 +109,7 @@ document.body.append(css);
                     await $.fs.write(pathcur + item.name,item,prog);  // 上传
                     progtip.innerText = i++;
                 }catch(e){
-                    $.dialog.msg('error','上传出错:',xhrResult(e.target),10).title = '出错文件:'+item.name;
+                    $.dialog.msg('error','上传出错:',xhrResult(e.target),5).title = '出错文件:'+item.name;
                     if(CONFIG.debug) console.log('Warn:Failed to UPLOAD:',e);
                     progdiv.remove();msg.remove();
                     return uploading = false;
@@ -146,7 +146,7 @@ document.body.append(css);
     }
     // 粘贴
     async function paste(path){
-        if(flist.length == 0) return $.dialog.msg('warn','剪贴板为空','可能正在操作中',10);
+        if(flist.length == 0) return $.dialog.msg('warn','剪贴板为空','可能正在操作中',5);
         if(!path) path = VIEW.contentDocument.location.pathname;
         fl = flist,flist = [];if(CONFIG.debug) console.log('Try to paste',fl);
         for (let file of fl)
@@ -158,7 +158,7 @@ document.body.append(css);
                         .replace(CONFIG.prefix,CONFIG.admin.prefix)     // 目标
                 );
             }catch(e){
-                $.dialog.msg('error','粘贴失败:',xhrResult(e.target),10).title = '出错文件:'+file;
+                $.dialog.msg('error','粘贴失败:',xhrResult(e.target),5).title = '出错文件:'+file;
                 if(CONFIG.debug) console.log('Warn:Failed to Paste:',e);
                 return false;
             }
@@ -255,7 +255,7 @@ document.body.append(css);
             <path fill="#0ac308" fill-rule="evenodd" d="M5 2a.5.5 0 0 1 .5-.5c.862 0 1.573.287 2.06.566.174.099.321.198.44.286.119-.088.266-.187.44-.286A4.165 4.165 0 0 1 10.5 1.5a.5.5 0 0 1 0 1c-.638 0-1.177.213-1.564.434a3.49 3.49 0 0 0-.436.294V7.5H9a.5.5 0 0 1 0 1h-.5v4.272c.1.08.248.187.436.294.387.221.926.434 1.564.434a.5.5 0 0 1 0 1 4.165 4.165 0 0 1-2.06-.566A4.561 4.561 0 0 1 8 13.65a4.561 4.561 0 0 1-.44.285 4.165 4.165 0 0 1-2.06.566.5.5 0 0 1 0-1c.638 0 1.177-.213 1.564-.434.188-.107.335-.214.436-.294V8.5H7a.5.5 0 0 1 0-1h.5V3.228a3.49 3.49 0 0 0-.436-.294A3.166 3.166 0 0 0 5.5 2.5.5.5 0 0 1 5 2z"/>
             <path fill="#df278d" d="M10 5h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4v1h4a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4v1zM6 5V4H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4v-1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4z"/>
         </svg>`,'重命名',function(){
-            if($.list.checked.length != 1) return $.dialog.msg('warn','重命名','请一次选择一个文件!',10);
+            if($.list.checked.length != 1) return $.dialog.msg('warn','重命名','请一次选择一个文件!',5);
             let target = $.list.checked[0];
             rename(target);
         }).hide()
@@ -292,7 +292,7 @@ document.body.append(css);
                 '确定:success':async function(self){
                     let val = self.getElementsByTagName('input')[0].value;
                     if($.list.list.dir.includes(val))
-                        return $.dialog.msg('error','已经存在','此文件夹已经存在啦!',10);
+                        return $.dialog.msg('error','已经存在','此文件夹已经存在啦!',5);
                     self.remove();
                     try{
                         await $.fs.mkdir($.fs._get() + encodeURIComponent(val) + '/');
@@ -339,7 +339,7 @@ document.body.append(css);
             ele.ondragleave = ele.ondragend  = ()=>!!ele.classList.remove('focus'),
             ele.ondrop = async function(event){
                 if(!this.children[0].classList.contains('dir'))
-                    return $.dialog.msg('warn','失败','请拖拽到文件夹中!',10);
+                    return $.dialog.msg('warn','失败','请拖拽到文件夹中!',5);
                 else if(event.dataTransfer.getData('text/fdurl') == 
                     this.getElementsByTagName('a')[0].href.replace(CONFIG.prefix,CONFIG.admin.prefix))
                     return; // 自己拖动到自己内，当作无效
@@ -348,8 +348,8 @@ document.body.append(css);
                 if(event.dataTransfer.types.includes('text/fdurl')){
                     start(event,this.getElementsByTagName('a')[0].href);
                 }else if(event.dataTransfer.files.length > 0){
-                    return !!$.dialog.msg('warn','拖拽','上传文件请使用上传框!',10);
-                }else return !$.dialog.msg('error','拖拽','无效的拖拽',10);
+                    return !!$.dialog.msg('warn','拖拽','上传文件请使用上传框!',5);
+                }else return !$.dialog.msg('error','拖拽','无效的拖拽',5);
                 return false;
             };
         for(let title of bread.children){
@@ -359,7 +359,7 @@ document.body.append(css);
                 if(CONFIG.debug) console.log('Drag to head.',event.dataTransfer);
                 if(event.dataTransfer.types.includes('text/fdurl'))
                     start(e,this.href.replace(CONFIG.prefix,CONFIG.admin.prefix));
-                else $.dialog.msg('error','拖拽','无效的拖拽',10);
+                else $.dialog.msg('error','拖拽','无效的拖拽',5);
             }
         }
     }
@@ -375,7 +375,7 @@ document.body.append(css);
     }
     // 获取链接
     function getLink(a){
-        if(a.parentElement.classList.contains('dir')) return $.dialog.msg('warn','获取失败','目录没有直链!',10);
+        if(a.parentElement.classList.contains('dir')) return $.dialog.msg('warn','获取失败','目录没有直链!',5);
         $.dialog.dialog('链接',`
             <p>文件：${a.getAttribute('title')}</p>
             <p><b>解析链接如下:</b></p>
@@ -387,7 +387,7 @@ document.body.append(css);
                     text.select();document.execCommand ('copy');text.blur();
                     $.dialog.msg('success', '复制成功', '不要用到奇怪的地方哦',5);
                 }catch(e){
-                    $.dialog.msg('error','失败','复制出错，请手动复制',10);
+                    $.dialog.msg('error','失败','复制出错，请手动复制',5);
                     throw e;
                 }
             },'关闭:info':self=>self.remove()
