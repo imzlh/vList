@@ -65,9 +65,6 @@ p.copyright {
     text-align:center;
 }
 input.so {
-    float:right;
-    width:40%;
-    min-width:20rem;
     padding:0.5rem 1rem;
     border-radius:0.3rem;
     background-color:var(--thead);
@@ -77,14 +74,14 @@ input.so:active {
     border-color:gray;outline: none;
 }
 #content{
-    position: absolute;
     background-color: var(--body);
-    width: 40%;min-width: 22rem;
-    right: 0;
     border-radius: 0.5rem;
     font-size: 1rem;font-weight: normal;
-    border: solid 0.05rem gray;
-    max-height: 60vh;
+    /*border: solid 0.05rem gray;*/
+    z-index: 100;overflow-y: auto;
+}
+#content:hover{
+    display: block;
 }
 #content>a {
     display: block;
@@ -102,6 +99,9 @@ input.so:active {
 #switch:hover {
     background-color:var(--hover);
 }
+h2{
+    position: relative;z-index: 3;
+}
 
 /*PC*/
 @media screen and (min-width:40rem){
@@ -116,7 +116,7 @@ input.so:active {
     p.copyright{
         margin: 1rem -1rem -1rem -1rem;
     }
-    #bread>a, #content>a {
+    #bread>a {
         padding:0.2rem 0.5rem;
         margin:0.2rem;
         border-radius:0.3rem;
@@ -137,16 +137,30 @@ input.so:active {
     #switch{
         background-color:var(--box);
     }
+    input.so{
+        float:right;
+        width:40%;min-width:20rem;
+    }
+    #content{
+        width: 40%;min-width: 22rem;max-height: 80vh;
+        right: 0;position: absolute;
+    }
 }
 /*手机*/
 @media screen and (max-width:40rem){
-    thead,table#list>tbody>tr.dir>td.size,table#list>tbody>tr>td.date,.so{
+    thead,table#list>tbody>tr.dir>td.size,table#list>tbody>tr>td.date{
         display: none !important;
+    }
+    input.so{
+        position: fixed;
+        top: 1rem;left: 1rem;right: 1rem;
+        z-index: 10;
+        display: none;
     }
     tbody > tr{
         border: var(--item) 0.1rem solid;
     }
-    #bread>a, #content>a {
+    #bread>a {
         padding: 0 0.25rem;
         margin: 0.25rem;
         border-radius: 0;
@@ -159,7 +173,6 @@ input.so:active {
         margin: 0;
         padding: 0.5em;
         background-color: rgba(255,255,255,0.8);
-        opacity: 0.8;
         position: sticky;
         top: 0;
     }
@@ -171,6 +184,22 @@ input.so:active {
         top: 0.75rem;
         bottom: auto;
         transform: scale(1.25);
+        z-index: 5;
+    }
+    #content{
+        position: fixed;z-index: 5;
+        top: 0;left: 0;right: 0;bottom: 20vh;
+        /*inset:0*/
+        padding: 4rem 1rem 0 1rem;
+        opacity: .9;
+    }
+    #content::after{
+        display: block;
+        position: absolute;
+        bottom: 0;left: 0;right: 0;
+        padding: .5rem 1rem;
+        background-color: var(--thead);
+        content: '搜索完成，点击下方交界处退出';
     }
 }
 
