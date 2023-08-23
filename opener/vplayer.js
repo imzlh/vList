@@ -37,7 +37,7 @@
     },load = async function(){
         if(typeof $vp == 'undefined'){
             let box = document.createElement('div'),
-                url = window.vp_load_url || 'https://imzlh.top:8443/vplayer/';
+                url = window.vp_load_url || 'vendor/audio/';
             await $.module.css(url+'vp.css');
             box.innerHTML += await (await fetch(url+'vp.html')).text();
             document.body.append(box);
@@ -62,5 +62,5 @@
             vp_addCD(music[i].path,i == 0);
         this.hidden = true;
     });
-    VIEW.addEventListener('load',()=>playlist.hidden = false);
+    $.list.onload(()=>playlist.hidden = false);
 }

@@ -17,6 +17,12 @@
     width: auto !important;height: auto !important;
     user-select: none;
 }
+.vp_video_box[resize=x]{
+    width:100% !important;max-height: none !important;
+}
+.vp_video_box[resize=y]{
+    height:100% !important;max-width: none !important;
+}
 .vp_video_box > *{
     pointer-events: none;
 }

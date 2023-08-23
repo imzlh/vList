@@ -259,6 +259,7 @@
                 if(pos == -1) return [this,this];
                 return [this.substring(0,pos),this.substring(pos+1)];
             }
+            // 元素单选
             class ElementSelector{
                 element;
                 currect = 0;
@@ -301,8 +302,11 @@
             }
             // 基类
             const $ = {
+                // 列表
                 list : {
+                    // 文件(dir) 文件夹(dir) 列表
                     list : {},
+                    // 根据后缀名获取类型
                     getype : function(ext){
                         if(typeof ext != 'string')
                             // throw new TypeError('argument #0 is '+typeof ext+',not string');
@@ -313,14 +317,42 @@
                                 if(CONFIG.map[type1][type2].includes(ext)) return [type1,type2];
                         return ['bin','unsupport'];
                     },
+                    // 刷新缓存
                     refresh : function(){
-                        var list = VIEW.contentDocument.querySelectorAll('body>table#list>tbody>tr>td.link');
+                        var list = VIEW.contentDocument.querySelectorAll('body>table#list>tbody>tr>td.link'),
+                            start = Date.now();
                         this.list = {"file":[],"dir":[]};
                         for (let i = 0; i < list.length; i++){
                             this.additem(list[i].getElementsByTagName('a')[0],list[i]);
                         }
-                        if(CONFIG.debug) console.log('Success rebuilt DB.');
+                        this.autohide();
+                        // for(let {element} of this.match())
+                        this.loadevent.forEach(func => func());    // 执行回调
+                        if(CONFIG.debug) console.log('Success rebuilt DB in',Date.now() - start,'ms');
                     },
+                    // 隐藏部分匹配的文件
+                    autohide : function(){
+                        for(let hides of CONFIG.hide){
+                            try{
+                                var [,type,name,ext] = hides.match(/^(<\w+>)?([\w\W]+)\.(\w+|\*)$/i),after = [];
+                            }catch(e){
+                                throw new Error('CONFIG param "hide" contains some error.');
+                            }
+                            if(!type || type.length <= 2){    // 名称完全匹配
+                                if(name == '*' || ext == '*') after = this.list.file;
+                                if(ext != '*')  after = after.filter(item => item.name.splitLast('.')[1] == ext);
+                                if(name != '*') after = after.filter(item => item.name.splitLast('.')[0] == name);
+                            }else{    // 类型+后缀匹配
+                                type = type.substring(1,type.length-1);
+                                if(name == '*' && ext == '*') return console.error('Please use hideType instead of',hides);
+                                after = [...this.match(name,type)];
+                                if(ext != '*') after = after.filter(item => item.name.splitLast('.')[1] == ext);
+                            }
+                            if(CONFIG.debug) console.log('Matched',after.length,'for',{type,name,ext},':',after);
+                            after.forEach(item => item.element.dataset.hidden = item.element.parentElement.hidden = true);
+                        }
+                    },
+                    // 增加文件/文件夹
                     additem:function(element,box){
                         if(!element instanceof HTMLAnchorElement)
                             throw new TypeError('Cannot add an empty element');
@@ -329,49 +361,40 @@
                             rherf   = element.getAttribute('href'),     // 真实指向
                             isdir   = rherf.substr(-1) == '/';          // 判断是否为文件夹
                         if(CONFIG.debug) console.log(isdir,name);
+                        element.parentElement.dataset.href = href;
                         if(isdir){
                             // 文件夹
                             this.list.dir.push({
                                 name : name,
-                                href : href
+                                path : href
                             }); 
                             box.classList.add('dir');
                             box.parentElement.classList.add('dir');
                         }else{
                             var ext = name.splitLast('.')[1],[type1,type2] = this.getype(ext);
                             // 1.决定是否隐藏
-                            box.parentElement.hidden = CONFIG.autohide && CONFIG.hide.includes(type1+"/"+type2);
-                            if(name.toLowerCase() == 'readme.md'){
-                                box.parentElement.hidden = true;
-                                $.module.load('https://cdn.bootcdn.net/ajax/libs/marked/4.3.0/marked.min.js').then(async function(){
-                                    try{
-                                        var readme = document.createElement('div');
-                                        readme.id = 'readme';
-                                        readme.innerHTML = marked.parse(await $.tool.curl(href));
-                                        VIEW.contentDocument.body.insertBefore(readme,VIEW.contentDocument.querySelector('p.copyright'));
-                                    }catch(e){
-                                        console.log('网络错误:'+e.message);
-                                    }
-                                });
-                            }else{
-                                // 2.添加图标
-                                box.classList.add(type1,type2);
-                                // 3.去除默认事件
-                                element.onclick = function(){return false;}
-                                // 4.推入数据库
-                                this.list.file.push({
-                                    name : name,        // 全名
-                                    path : href,        // URL路径
-                                    type : [type1,type2]// 类型
-                                });
-                            }
+                            box.dataset.hidden = box.parentElement.hidden = CONFIG.autohide && CONFIG.hideType.includes(type1+"/"+type2);
+                            // 2.添加图标
+                            box.classList.add(type1,type2);
+                            // 3.去除默认事件
+                            element.onclick = function(){return false;}
+                            // 4.推入数据库
+                            this.list.file.push({
+                                name     : name,        // 全名
+                                path     : href,        // URL路径
+                                type     : [type1,type2],// 类型
+                                element  : box          // 元素
+                            });
                         }
                     },
+                    // 匹配文件
                     match : function*(base,type){
+                        if(type == '*' && base == '*') throw new Error('Nothing matched.');
                         base = decodeURIComponent(base.toLowerCase());
                         for (var i = 0; i < this.list.file.length; i++) {
                             let now = this.list.file[i];
-                            if(
+                            if(type == '*' && now.splitLast('.')[0] == base) yield now; 
+                            else if(
                                 (
                                     base === '*' ||
                                     $.tool.base(now.name).toLowerCase() == base
@@ -380,13 +403,24 @@
                             ) yield now;
                         }
                     },
+                    // 获取第一个匹配的文件
                     matchFirst:function(base,type){
                         return this.match(base,type).next().value;
+                    },
+                    loadevent:[],
+                    // 添加加载事件
+                    onload:function(callback){
+                        if(typeof callback != 'function')
+                            throw new Error('Should be an function');
+                        if(this.list.file || this.list.dir)
+                            callback();    // 已经构建好一次：直接调用
+                        this.loadevent.push(callback);
                     }
                 },
                 tool:{
-                    view : document.getElementById('view'),
-                    tool : document.getElementById('box'),
+                    view : document.getElementById('view'),    // 预览盒子
+                    tool : document.getElementById('box'),     // 工具盒子
+                    // 增加工具按钮（底部）
                     add : function(svg,desc,callback){
                         var box = document.createElement('button');
                         box.innerHTML = svg;
@@ -395,6 +429,7 @@
                         this.tool.append(box);
                         return box;
                     },
+                    // 添加一个预览盒子
                     box : function(id,tag,icon,callback){
                         var box = document.createElement(tag||'div');
                         box.classList.add('view');
@@ -419,6 +454,7 @@
                         }
                         return box;
                     },
+                    // 展示预览盒子
                     show : function(box){
                         if(!box instanceof HTMLElement)
                             throw new TypeError('only HTMLElement should be shown');
@@ -426,21 +462,25 @@
                         box.hidden = this.view.hidden = false;
                         (box.autoFocus || box).focus();
                     },
+                    // 工具：返回文件名，不含后缀名
                     base : function(path){
                         if(typeof path != 'string')
                             // throw new TypeError('base(#1) require arg#1:string,'+typeof path+' was given.');
                             path = path.toString();
                         return path.splitLast('/')[1].splitLast('.')[0].toString();
                     },
+                    // 工具：快速获取URL内容
                     curl : async function(url){
                         var fe = await fetch(url);
                         if(!fe.ok) throw new Error(fe.status);
                         var res = await fe.text();
                         return res;
                     },
+                    // 工具：初始化键盘事件、元素单选
                     selector : function(listened,elements,keys={},addClass,callback){
                         let addup,
                             selector = new ElementSelector(elements,(now,last)=>{
+                                if(!now || !last) return;
                                 if(addClass){
                                     if(last) last.classList.remove(addClass);
                                     if(now.hidden) return selector.add(addup);
@@ -451,6 +491,8 @@
                                 }
                                 if(!now.hidden && callback) callback(now,last);
                             });
+                        for (var i = 0; i < elements.length; i++)
+                            elements[i].addEventListener('click',()=>selector.i = i);
                         listened.addEventListener('keydown',function(e){
                             if(CONFIG.debug) console.log('Clicked [',e.key,'] ON Element',listened);
                             if(e.key in keys) keys[e.key](selector);
@@ -540,6 +582,7 @@
                         });
                         return main;
                     },
+                    // offcanvas侧边栏
                     offcv:function(head,body,direction='right'){
                         let [main,title,content] = this.create(3);
                         // 主盒子
@@ -558,6 +601,7 @@
                     }
                 },
                 cache:{
+                    // 刷新/初始化缓存
                     reload : async function(focus=false,norpt=false){
                         // 初始化缓存
                         if(undefined == localStorage.vlist || focus){
@@ -583,6 +627,7 @@
                         }
                     },
                     listener:{},
+                    // 动态设置缓存
                     set:function(item,val){
                         let items = item.split('.'),
                             target = items[items.length-1],
@@ -602,6 +647,7 @@
                         if(item in this.listener) this.listener[item](val);
                         if(CONFIG.debug) console.warn('config changed.it is dangerous!');
                     },
+                    // 监听某一个配置的变化
                     onChange:function(target,callback){
                         if(target in this.listener && CONFIG.debug)
                             console.warn('Overwrite handle for:',target);
@@ -609,6 +655,7 @@
                     }
                 },
                 loaded : 0,
+                // 寻找<a>元素
                 _find : function(src){
                     if(src.tagName == 'TD'){
                         if(src.classList.contains('link')){
@@ -622,6 +669,7 @@
                         return src.getElementsByTagName('a')[0];
                     }else return null;
                 },
+                // 初始化vList
                 init : function(){
                     if(CONFIG.debug) console.log('Restart VLIST service.');
                     // 1.增加事件监听
@@ -653,7 +701,7 @@
                     // 2.重新构建目录树
                     $.list.refresh();
                 },
-                // openlock:false,
+                // 打开一个文件
                 open:async function(a,type,no_callself=false){
                     if(!a instanceof HTMLAnchorElement)
                         throw new TypeError('Not a tag named <a>');
@@ -669,40 +717,51 @@
                     // this.openlock = true;
                     try{
                         if(typeof open == 'string'){
-                            // if(this.openlock) return console.log('Failed:locked.');
-                            if(no_callself) throw new Error('Failed to open:code loop(maybe module contains some error?)');
+                            if(no_callself) throw new Error('Failed to open:loop(maybe module contains some error?)');
                             else {
-                                try{
+                                // 打开协议
+                                if(open.substring(0,1) == '<'){
+                                    let [,scheme,target] = open.matchAll(/^\<(\w+)\>([\w\W]+)$/g).next().value;
+                                    if(!(scheme in this.module.scheme) || typeof this.module.scheme[scheme] != 'function')
+                                        return $.dialog.msg('error','打开失败','找不到协议'+scheme+'的打开方式');
+                                    try{
+                                        return await this.module.scheme[scheme](target.replaceAll('{{link}}',a.href));
+                                    }catch(e){
+                                        $.dialog.msg('error','打开失败',e.message);
+                                        throw e;
+                                    }
+                                // 正常打开
+                                }else try{
                                     await this.module.load(open);
                                 }catch(e){
                                     $.dialog.msg('error','打开失败','依赖加载失败');
                                 }
                                 return $.open(a,type,true);            //打开文件
                             }
-                        }else if(typeof open == 'function') return open(a.href);
+                        }else if(typeof open == 'function') return await open(a.href);
                         else throw new Error('Unknown opener(Tag:"'+type+'"&Type:"'+typeof open+'")');
                     }catch(e){
                         $.dialog.msg('error','打开失败',e.message);
                         throw e;
                     }
-                    // this.openlock = false;
                 },
                 module:{
                     loaded:{},
+                    // 加载一个模块
                     load:function(js,tagName='script',callback){
                         return new Promise(function(rs,rj){
                             var tag;
                             if(js in $.module.loaded){
                                 if(typeof $.module.loaded[js] == 'boolean'){
-                                    return $.module.loaded[js]?rs():rj();
+                                    return $.module.loaded[js]?rs():rj('Loaded but failed.');
                                 }else{
                                     tag = $.module.loaded[js];
                                 }
                             }else{
                                 tag = document.createElement(tagName);
                                 tag.src = js;
-                                tag.onload = ()=> $.module.loaded[js] = true;
-                                tag.onerror = ()=>$.module.loaded[js] = false;
+                                tag.onload = ()=>  $.module.loaded[js] = true;
+                                tag.onerror = ()=> $.module.loaded[js] = false;
                                 $.module.loaded[js] = tag;
                                 if(callback) callback(tag);
                                 document.body.append(tag);
@@ -711,26 +770,30 @@
                                 if(CONFIG.debug) console.log('Load['+$.tool.base(js)+']succeed');
                                 rs(e);
                             });
-                            tag.onerror = e=>{
+                            tag.addEventListener('error', e=>{
                                 console.warn('Load['+$.tool.base(js)+']failed');
                                 rj(e);
-                            }
+                            });
                         });
                         return true;
                     },
+                    // 加载css
                     css:function(css){
                         return this.load(css,'link',function(tag){
                             tag.rel='stylesheet';
                             tag.href = tag.src;
                         });
                     },
-                    bind:function(name,callback){
+                    scheme:{},
+                    // 绑定协议或者type
+                    bind:function(name,callback,typename='opener'){
                         if(typeof callback != 'function')
                             throw new TypeError('Callback must a function');
-                        if(CONFIG.debug && typeof CONFIG.opener[name] == 'function')
-                            console.warn('WARN:opener for [',name,'] overwriten.It may cause some problem!');
-                        CONFIG.opener[name] = callback;
-                        if(CONFIG.debug) console.log('New opener for TYPE:[',name,']');
+                        if(CONFIG.debug && typeof this[typename][name] == 'function')
+                            console.warn('WARN:[',name,'] overwriten.It may cause some problem!');
+                        let type = this[typename] || {0:console.error('Unknown type:',typename)};
+                        type[name] = callback;
+                        if(CONFIG.debug) console.log('Loaded new',typename,':[',name,']');
                     }
                 },
                 
@@ -776,7 +839,68 @@
         </div>
     </body>
 </html>`,VIEW.src = '';
-            VIEW.addEventListener('load',function(){
+            // 监听事件
+            $.tool.view.onclick = e =>{
+                if(!e || e.target.id == 'view'){
+                    $.tool.view.hidden = true;
+                    for (var i = 0; i < $.tool.view.children.length; i++)
+                        $.tool.view.children[i].hidden = true;
+                    VIEW.contentWindow.focus();
+                }
+            };
+            $.tool.view.addEventListener('keydown',function(e){
+                if($.tool.view.hidden) return true;
+                e.stopPropagation();//e.preventDefault();
+                if(e.key == 'Escape' || e.key == 'Home') $.tool.view.onclick();
+            });
+            $.tool.tools = $.tool.selector($.tool.tool,$.tool.tool.children,{
+                'ArrowUp':()=>VIEW.contentWindow.focus()
+            })
+            // 初始化view
+            $.cache.reload().then(function(){
+                // 字体大小重载
+                let changeFontSize = ()=>
+                    document.documentElement.style.fontSize
+                    = VIEW.contentDocument.documentElement.style.fontSize
+                    = CONFIG.globalFont + 'px';
+                $.cache.onChange('globalFont',changeFontSize);
+                changeFontSize();
+                // 页面标题
+                document.title = CONFIG.title;
+                // opener
+                $.module.opener = CONFIG.opener;
+                // 初始化主题
+                let theme = ['dark','white'];
+                if(!theme.includes(sessionStorage.mode) && CONFIG.autoTheme){
+                    let hour = (new Date()).getHours();
+                    sessionStorage.mode = (hour >= 20 || hour <=6)?'dark':'white';
+                }
+                // 初始化iframe
+                var hash = document.location.hash.substring(1).split('?');
+                VIEW.src = hash[0] == '' ? CONFIG.prefix : hash[0];
+                let param = {};
+                if(typeof hash[1] == 'string'){
+                    for(let param of hash[1].split('&')){
+                        let nv = decodeURIComponent(param).split('=');
+                        param[nv[0]] = nv[1];
+                        if(CONFIG.debug) console.log(nv[0],":",nv[1]);
+                    }
+                    if(CONFIG.debug) console.log('param found(in uri:"',hash[1],'")');
+                    if(typeof param.open == 'string')
+                        $.open(param.open);
+                }
+                window.location.param = param;
+                // 初始化dialog
+                if(CONFIG.animate){
+                    let style = document.createElement('style');
+                    style.innerHTML = '@keyframes fadein{from{opacity: 0;transform: translateX(-2rem);}to{opacity: 1;transform: translateX(0);}}@keyframes fadeout{from{opacity: 1;transform: translateX(0);}to{opacity: 0;transform: translateX(2rem);}}#msg > *{animation: fadein 0.3s forwards;}.fadeout{animation: fadeout 0.3s forwards !important;}@keyframes jumpin{from{opacity: 0;transform: scale(0);}to{opacity: 1;transform: scale(1);}}@keyframes jumpout{from{opacity: 1;transform: scale(1);}to{opacity: 0;transform: scale(0);}}.window{animation: jumpin 0.3s forwards;}.jumpout{animation: jumpout 0.3s forwards;}';
+                    document.body.append(style);
+                }
+                // 加载扩展
+                for (var i = 0; i < CONFIG.extension.length; i++)
+                    $.module.load(CONFIG.extension[i]);
+            });
+            VIEW.onload = function(){
                 // ctx.hidden = true;
                 if(VIEW.srcdoc != '' || VIEW.srcdoc == null) return;
                 try{
@@ -789,16 +913,23 @@
                 $.init();
                 document.location.hash = '#'+VIEW.contentDocument.location.pathname;
                 VIEW.contentDocument.addEventListener('contextmenu', e => {
-                    let x = e.clientX + 'px',y = e.clientY + 'px',
-                        ctx = document.getElementById('ctx');
-                    ctx.hidden = false,ctx.style.left = x,ctx.style.top = y;
+                    let x = e.clientX,y = e.clientY,
+                        ctx = document.getElementById('ctx'),
+                        pageY = document.documentElement.clientHeight,pageX = document.documentElement.clientWidth;
+                    if(typeof ctx.ondisplay == 'function')
+                        ctx.ondisplay($._find(e.target) || e.target);
+                    if(ctx.clientWidth + x > pageX)
+                        ctx.style.left = (x - ctx.clientWidth) + 'px';
+                    else ctx.style.left = x + 'px';
+                    if(ctx.clientHeight + y > pageY)
+                        ctx.style.top = (y - ctx.clientHeight) + 'px';
+                    else ctx.style.top = y + 'px';
+                    ctx.hidden = false;
                     VIEW.contentDocument.onclick = document.onclick = function(e){
                         ctx.hidden = true, document.onclick = VIEW.contentDocument.onclick = null;
                         return false;
                     }
                     e.preventDefault();
-                    if(typeof ctx.ondisplay == 'function')
-                        ctx.ondisplay($._find(e.target) || e.target);
                 });
                 let so = VIEW.contentDocument.getElementById('search');
                 so.onfocus = function(){
@@ -823,66 +954,7 @@
                     })
                 );
                 VIEW.focus();
-            });
-            // 监听事件
-            $.tool.view.onclick = e =>{
-                if(!e || e.target.id == 'view'){
-                    $.tool.view.hidden = true;
-                    for (var i = 0; i < $.tool.view.children.length; i++)
-                        $.tool.view.children[i].hidden = true;
-                    VIEW.contentWindow.focus();
-                }
             };
-            $.tool.view.addEventListener('keydown',function(e){
-                if($.tool.view.hidden) return true;
-                e.stopPropagation();//e.preventDefault();
-                if(e.key == 'Escape' || e.key == 'Home') $.tool.view.onclick();
-            });
-            $.tool.tools = $.tool.selector($.tool.tool,$.tool.tool.children,{
-                'ArrowUp':()=>VIEW.contentWindow.focus()
-            })
-            // 初始化view
-            $.cache.reload().then(async function(){
-                // 字体大小重载
-                let changeFontSize = ()=>
-                    document.documentElement.style.fontSize
-                    = VIEW.contentDocument.documentElement.style.fontSize
-                    = CONFIG.globalFont + 'px';
-                $.cache.onChange('globalFont',changeFontSize);
-                changeFontSize();
-                // 页面标题
-                document.title = CONFIG.title;
-                // 初始化主题
-                let theme = ['dark','white'];
-                if(!theme.includes(sessionStorage.mode) && CONFIG.autoTheme){
-                    let hour = (new Date()).getHours();
-                    sessionStorage.mode = (hour >= 20 || hour <=6)?'dark':'white';
-                }
-                // 初始化iframe
-                var hash = document.location.hash.substring(1).split('?');
-                VIEW.src = hash[0] == '' ? CONFIG.prefix : hash[0];
-                let param = {};
-                if(typeof hash[1] == 'string'){
-                    for(let param of hash[1].split('&')){
-                        let nv = decodeURIComponent(param).split('=');
-                        param[nv[0]] = nv[1];
-                        if(CONFIG.debug) console.log(nv[0],":",nv[1]);
-                    }
-                    if(CONFIG.debug) console.log('param found(in uri:"',hash[1],'")');
-                    if(typeof param.open == 'string')
-                        $.open(param.open);
-                }
-                window.location.param = param;
-                // 加载扩展
-                for (var i = 0; i < CONFIG.extension.length; i++)
-                    await $.module.load(CONFIG.extension[i]);
-                // 初始化dialog
-                if(CONFIG.animate){
-                    let style = document.createElement('style');
-                    style.innerHTML = '@keyframes fadein{from{opacity: 0;transform: translateX(-2rem);}to{opacity: 1;transform: translateX(0);}}@keyframes fadeout{from{opacity: 1;transform: translateX(0);}to{opacity: 0;transform: translateX(2rem);}}#msg > *{animation: fadein 0.3s forwards;}.fadeout{animation: fadeout 0.3s forwards !important;}@keyframes jumpin{from{opacity: 0;transform: scale(0);}to{opacity: 1;transform: scale(1);}}@keyframes jumpout{from{opacity: 1;transform: scale(1);}to{opacity: 0;transform: scale(0);}}.window{animation: jumpin 0.3s forwards;}.jumpout{animation: jumpout 0.3s forwards;}';
-                    document.body.append(style);
-                }
-            });
         </script>
     </body>
 </html>

@@ -307,7 +307,7 @@ document.body.append(css);
             })
         })
     // 拖拽移动支持
-    function initDrag(){
+    $.list.onload(function(){
         async function start(event,dir){
             let fpath = event.dataTransfer.getData('text/fdurl'),
                 fname = event.dataTransfer.getData('text/fdname'),
@@ -362,9 +362,7 @@ document.body.append(css);
                 else $.dialog.msg('error','拖拽','无效的拖拽',5);
             }
         }
-    }
-    VIEW.addEventListener('load',initDrag);
-    initDrag();
+    });
     // 关于
     function about(){
         $.dialog.dialog('关于',`

@@ -16,6 +16,21 @@ self.onactive = e=>e.waitUntil(
 self.oninstall = ()=>self.skipWaiting();
 self.onfetch = e=>e.respondWith(
     (async function(){
+        if(e.request.url.endsWith('@api/clear')){
+            try{
+                await caches.delete('vlist_jsmodule');
+            }catch(e){
+                return new Response(e.message, {
+                    status: 500,
+                    headers: { "Content-Type": "text/plain" },
+                });
+            }
+            _vlist_cache = null;
+            return new Response(null, {
+                status: 204,
+                headers: { "Content-Type": "text/plain" },
+            });
+        }
         if(!_vlist_cache) _vlist_cache = await caches.open("vlist_jsmodule");
         // 首先，如果是JS&CSS，缓存JS&CSS文件
         let match = e.request.url.lastIndexOf('.'),
@@ -26,8 +41,8 @@ self.onfetch = e=>e.respondWith(
             if(cache) return cache;
             else try{
                 let response = await fetch(e.request);
-                if(ext == 'js' || ext == 'css')
-                    _vlist_cache.put(e.request,response.clone());
+                // if(ext == 'js' || ext == 'css')
+                //     _vlist_cache.put(e.request,response.clone());
                 return response;
             }catch(error){
                 console.warn('Fetch failed.',e,error);

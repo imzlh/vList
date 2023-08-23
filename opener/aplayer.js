@@ -41,7 +41,7 @@
             add(music.next().path,i==0);
         this.hidden = true;
     });
-    VIEW.addEventListener('load',()=>pl.hidden = false);
+    $.list.onload(() => pl.hidden = false);
     // 初始化
     $.module.bind('audio',async function (path){
         if(typeof APlayer == 'undefined'){

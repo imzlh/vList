@@ -149,10 +149,10 @@ class vp{
             self.alert('倍速播放: '+value+' 倍');
         };
         this.e.func.tracks.onchange = tg => tg;
-        this.$('func_next')[0].onclick = ()=>self.use(self.list.next);
-        this.$('func_last')[0].onclick = ()=>self.use(self.list.last);
+        this.$('func_next')[0].onclick = ()=>self.add(self.list.next).click();
+        this.$('func_last')[0].onclick = ()=>self.add(self.list.last).click();
         this.$('func_videosize')[0].onchange = function(value,element){
-            self.e.vcontainer.setAttribute('style',value);
+            self.e.vcontainer.setAttribute('resize',value);
             self.alert(element.dataset.msg);
         };
         this.e.playlist.onchange = ()=>void false;

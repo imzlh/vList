@@ -32,6 +32,7 @@ $.module.css('https://cdn.bootcdn.net/ajax/libs/highlight.js/11.6.0/styles/vs.mi
         "php"       :   ['php'],
         "perl"      :	['perl', 'pl', 'pm'],
         "plaintext" :	['log', 'txt', 'text'],
+        "python"    :   ['py', 'jspy'],
         "r"         :   ['r'],
         "scss"      :   ['scss'],
         "typescript":	['typescript', 'ts', 'tsx', 'mts', 'cts'],

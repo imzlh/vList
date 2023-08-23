@@ -2,7 +2,7 @@
     "prefix":"/@list/",
     "thumb_prefix":false,
     "debug":false,
-    "version":3.1,
+    "version":4.0,
     "alert":"欢迎来到vList",
     "alert_delay":5000,
     "title":"izCloud!vList",
@@ -12,7 +12,7 @@
     "autoTheme":true,
     "autohide":true,
     "globalFont":16,
-    "packerPath":"vendor/packer/",
+    "packerPath":null,
     "map":{
         "text": {
             "subtitle": [
@@ -35,7 +35,8 @@
                 "make",
                 "perl","pl",
                 "sh","bash","cmd","bat","vbs",
-                "dockerfile","docker"
+                "dockerfile","docker",
+                "py","jspy"
             ],
             "plain": [
                 "log",
@@ -86,6 +87,20 @@
                 "ico",
                 "bmp"
             ]
+        },
+        "other":{
+            "office":[
+                "doc",
+                "docx",
+                "docm",
+                "xls",
+                "xlsx",
+                "xlsm",
+                "ppt",
+                "pptx",
+                "pptm"
+            ],
+            "pdf":["pdf"]
         }
     },
     "opener":{
@@ -94,17 +109,26 @@
         "depvideo":"opener/artplayer.js",
         "cd":"opener/vplayer.js",
         "image":"opener/viewer.js",
-        "text":"opener/highlight.js"
+        "text":"opener/highlight.js",
+        "office":"<weblink>https://view.officeapps.live.com/op/view.aspx?src={{link}}",
+        "pdf":"<weblink>vendor/pdf.js/?file={{link}}"
     },
     "extension":[
         "module/fcheck.js",
         "module/setting.js",
-        "opener/h5api.js",
-        "module/adalert.js"
+        "module/h5browser.js",
+        "module/adalert.js",
+        "module/autorun.js",
+        "module/readme.js",
+        "module/search.js"
     ],
-    "hide" : [
+    "hideType" : [
         "text/subtitle",
         "text/lyrics"
+    ],
+    "hide" : [
+        "<text>readme.*",
+        "autorun.py"
     ],
     "viewer":{
         "delay":10,

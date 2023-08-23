@@ -85,7 +85,7 @@ tool.push($.tool.add(
                 if(CONFIG.debug) console.log('filelist\n',files);
                 try{
                     window.packer_mitm = CONFIG.packerPath;
-                    await $.module.load('vendor/packer/zip-stream.min.js');
+                    await $.module.load('vendor/zip-stream.js');
                     var dlg = $.dialog.dialog('打包中','请耐心等待，正在打包...<pre id="pack_state" style="height:50vh;overflow:auto;"></pre>',undefined,false),
                         stdout = streamSaver.createWriteStream('packed.zip'),
                         ps = document.getElementById('pack_state'),
@@ -131,7 +131,7 @@ tool.push($.tool.add(
         });
     }
 ));
-VIEW.addEventListener('load',function(){
+$.list.onload(function(){
     if(CONFIG.debug) console.log('CheckBox reset.');
     files.splice(0),setState(false);
 });

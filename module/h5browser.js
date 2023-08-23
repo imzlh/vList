@@ -12,7 +12,7 @@ td.link.h5link::before {
     left: 1.75rem;
     z-index: 1;
 }`;
-    let load = async function(){
+    $.list.onload(async function(){
         // await $.module.load('module/lightnode.js');
         // const INI = await $.module.require('https://cdn.jsdelivr.net/npm/ini/lib/ini.min.js');
         await $.module.load('vendor/libini.js');
@@ -34,9 +34,7 @@ td.link.h5link::before {
                 a.innerText = a.getAttribute('title').splitLast('.')[0],
                 a.href = target + '!' + type;
             }catch(e){console.error(e);}
-    };
-    load();
-    VIEW.addEventListener('load',load);
+    });
     let box,open = function(path){
         if(!box) box = $.tool.box('h5-browser','iframe',`<svg fill="none" stroke="#ea3df5" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.25V18a2.25 2.25 0 002.25 2.25h13.5A2.25 2.25 0 0021 18V8.25m-18 0V6a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 6v2.25m-18 0h18M5.25 6h.008v.008H5.25V6zM7.5 6h.008v.008H7.5V6zm2.25 0h.008v.008H9.75V6z"></path>
@@ -52,4 +50,5 @@ td.link.h5link::before {
         else document.location.href = href;
     });
     $.module.bind('h5page',open);
+    $.module.bind('weblink',open,'scheme');
 }
