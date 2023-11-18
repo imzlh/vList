@@ -11,7 +11,9 @@
         #list;
         
         constructor(query){
-            if(typeof query == 'string')
+            if(typeof query == 'undefined')
+                this.#list = new Array();
+            else if(typeof query == 'string')
                 this.#list = new Array(...VIEW.contentDocument.querySelectorAll(query));
             else if(typeof query.innerHTML == 'string')
                 this.#list = new Array(query);
@@ -62,8 +64,8 @@
                 });
             else throw new Error('Failed.Unknown param.');
         }
-        get child(){
-            let childs = new this();
+        get children(){
+            let childs = new fakeElement();
             for(let group of this.#list)
                 for(let child of group.children)
                     childs.push(child);
@@ -96,8 +98,8 @@
             };
         }
         get parent(){
-            let parents = new this();
-            for(let element of this)
+            let parents = new fakeElement();
+            for(let element of this.#list)
                 parents.push(element.parentElement);
             return parents;
         }
@@ -110,16 +112,28 @@
             }else return this[0].getAttribute(name);
             return this;
         }
-        findChild(snip){
-            let childs = new this();
-            for(let group of this)
-                for(let child of grop.querySelectorAll())
-                    childs.push(childs);
-            return child;
+        on(event,callback){
+            if(typeof callback != 'function')
+                throw new TypeError('Please pass an python function.');
+            if(CONFIG.debug) 
+                console.log('Listen event (','on'+event,'):',callback);
+            for(let group of this.#list)
+                group['on'+event] = callback;
         }
-        del(){
-            this.#list.forEach(e => e.remove());
-            this.destroy();
+        child(snip){
+            let childs = new fakeElement();
+            for(let group of this.#list)
+                for(let child of group.querySelectorAll(snip))
+                    childs.push(child);
+            childs.prev = this;
+            return childs;
+        }
+        delete(){
+            this.#list.forEach(e => e.remove())
+        }
+        push(element){
+            if(element?.innerHTML) this.#list.push(element);
+            else throw new TypeError('For passing HTMLElement only,but found' + element?.constructor?.name);
         }
         into(group){
             group.append(...this.#list);
@@ -128,6 +142,8 @@
             this.#list.forEach(element => group.insertBefore(element,group.children[0]));
         }
     }
+
+    $.fe = fakeElement;
 
     var VM;
     const create = ()=> VM = jspython.jsPython()
@@ -157,7 +173,10 @@
             offcv   : (...param) => $.dialog.offcv(...param),
             openfile: (...param) => $.open(...param)
         })
-        .addFunction('sleep'  , sec => new Promise(rs=>setTimeout(rs, sec*1000)))
+        .addFunction('sleep'  , sec => new Promise(rs=>setTimeout(function(path){
+            if(VIEW.contentDocument.location.href == path) rs();
+            else if(CONFIG.debug) console.warn('authrun.py Delay: timeout.');
+        }, sec*1000, VIEW.contentDocument.location.href)))
         .addFunction('int'    , float => parseInt(float))
         .addFunction('float'  , num => parseFloat(num))
         .addFunction('str'    , obj => obj.toString())

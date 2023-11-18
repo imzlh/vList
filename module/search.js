@@ -23,17 +23,19 @@ $.module.load('https://cdn.staticfile.org/pinyin-pro/3.16.3/index.min.js').then(
         }
         // 超模糊匹配
         match(input){
-            let arr = input.toLowerCase().split(''),
+            let arr = input.toLowerCase().replaceAll(/\s+/g,'').split(''),
                 matched = [],key,self = this;
             for(let item in this.mixmatch) (function(){
                 // 逐字搜索 
                 for(let word of arr){
-                    if(item.indexOf(word) == -1) return;
-                    else key = self.mixmatch[item].name.replaceAll(word,'<span style="color:red;">'+word+'</span>');
+                    if(item.indexOf(word) == -1) continue;
+                    else key = self.mixmatch[item].name
+                        .replaceAll(word,'<span style="color:red;">'+word+'</span>')
+                        .replaceAll(word.toUpperCase(),'<span style="color:purple;">'+word+'</span>');
                 }
                 // 匹配！
                 matched.push({
-                    name : key , path : self.mixmatch[item].path , element : self.mixmatch[item].element
+                    name : key.replaceAll('</span><span style="color:red;">') , path : self.mixmatch[item].path , element : self.mixmatch[item].element
                 });
             })();
             return matched;

@@ -1,0 +1,291 @@
+@charset "UTF-8";
+/* 全局 */
+#vp{
+    position: fixed;
+    top: 2rem;
+    left: 2rem;
+    background-color: white;
+    box-shadow: gray 0 0 0.5rem;
+    overflow: hidden;
+    z-index: 10000;
+}
+#vp_head{
+    background-color: #e3fafb;
+    padding: 0.5rem;
+    text-align: center;
+}
+#vp_title{
+    max-width: 20rem;
+    display: inline-block;
+}
+.vp_btn{
+    padding: 0.2em;
+}
+.vp_inline-btn{
+    display: inline-block;
+    padding: 0.2em;
+    font-size: 1.2em;
+}
+.vp_inline-btn,.vp_btn{
+    border-radius: 1em;
+    transition: background 0.1s;
+    height: 1em;
+}
+.vp_inline-btn:hover,.vp_btn:hover{
+    background-color: rgb(188, 188, 188);
+}
+.vp_btn[action=play]{
+    border: solid 0.1rem rgb(41, 155, 225);
+}
+.vp_btn > svg,.vp_inline-btn > svg{
+    width: 1em;
+    height: 1em;
+}
+.vp_btn[disabled=true]{
+    pointer-events: none;
+    border-color: gray !important;
+}
+#vp_error{
+    position: absolute;
+    inset: 0 0 auto 0;
+    padding: 0.3rem 0;
+    text-align: center;
+    background-color: rgb(213, 86, 86);
+    color: white;
+    display: none;
+}
+#vp_seeker{
+    height: 0.25rem;
+    border-radius: 0.25rem;
+    background-color: #cae6ef;
+}
+#vp_time_current,#vp_time_total{
+    margin: 0 1rem;
+}
+#vp_time_process{
+    background-color: rgb(69, 149, 214);
+    border-radius: 0.2rem;
+    height: 0.3rem;
+    min-width: 0.3rem;
+    position: relative;
+}
+#vp_seeker:hover span{
+    display: block !important;
+}
+#vp_time_process>span{
+    float: right;
+    position: absolute;
+    top: -0.35rem;
+    right: -0.35rem;
+    height: 1rem;
+    width: 1rem;
+    border-radius: 0.5rem;
+    display: none;
+    background-color: white;
+    border: solid 1px gray;
+}
+/* 专辑设置 */
+#vp[mode=full] #vp_more{
+    position: absolute;
+    inset: 2rem 0 7rem 0;
+    z-index: -1;
+}
+#vp_more{
+    display: flex;
+    align-items: center;
+}
+#vp_cover{
+    background-position: center !important;
+    max-width: 40vw;min-width: 20rem;aspect-ratio: 1/1;
+    flex-shrink: 0;
+}
+#vp_lyrics{
+    overflow-y: scroll;
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+    flex-grow: 1;
+}
+#vp_lyrics::before{
+    display: none;
+    content: '没有歌词';
+}
+#vp_lyrics[empty=true]{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: hidden;
+}
+#vp_lyrics[empty=true]::before{
+    display: inline;
+}
+#vp_lyrics > p{
+    color: rgb(80, 80, 80);
+    width: 100%;
+    text-align: center;
+    word-break: break-all;
+    position: relative;
+    user-select: none;
+}
+#vp_lyrics > p::after{
+    display: none;
+    content: attr(time);
+    position: absolute;right: 0;top: 0;
+    background-color: rgb(211 211 211 / 60%);color: white;
+    font-size: 1rem;padding: .25rem .5rem;border-radius: .2rem;
+}
+#vp_lyrics > p:hover::after{
+    display: block;
+}
+#vp_lyrics > p.current,#vp_lyrics::before{
+    color: rgb(19, 99, 133);
+    font-size: 1.5rem;
+}
+/* 窗口 */
+.vp_dialog{
+    z-index: 10002;
+    border: solid 0.1rem rgb(12, 121, 194);
+    position: fixed;
+    left: 0;right: 0;top: 2rem;
+    margin: auto;background-color: white;
+    max-width: 100vw;
+    width: 30rem;
+    max-height: calc(100vh - 4rem);
+    overflow: auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.09), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+.vp_dialog[title]::before{
+    position: sticky;top: 0;
+    content: attr(title);
+    padding: 0.5rem 1rem;
+    background-color: rgb(11, 119, 144);
+    color: white;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+}
+#vp_dialog_backdrop {
+    position: fixed;z-index: 10001;
+    inset: 0;width: 100vw;height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+}
+#vp_dialog_playlist > div{
+    padding: 0.5rem 1rem;
+    transition: background 0.1s;
+}
+#vp_dialog_playlist > div:hover{
+    background-color: lightblue;
+}
+#vp_dialog_voice > div:first-child{
+    margin-top: 1rem;
+}
+#vp_dialog_voice > div:last-child{
+    margin-bottom: 1rem;
+}
+#vp_dialog_voice > div{
+    margin: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+}
+#vp_dialog_voice > div > *{
+    flex-grow: 1;
+    margin-left: 2rem;
+}
+/* vpRange按钮组 */
+.vp_range{
+    border-radius: 0.25rem;
+    border: solid 0.1rem rgb(7, 89, 144);
+    display: flex;
+}
+.vp_range > *{
+    display: inline-block;
+    padding: 0.5rem 0;
+    transition: all 0.1s;
+    flex-grow: 1;
+    text-align: center;
+}
+.vp_range > .selected{
+    background-color: rgb(7, 89, 144);
+    color: white;
+}
+/* 最小按钮 */
+#vp[mode=min]{
+    font-size: 2rem;
+    border-radius: 2rem;
+}
+#vp[mode=min] *:not(.vp_avoid-hide,p.current){
+    display: none;
+}
+/* 卡片模式 */
+#vp[mode=card]{
+    border-radius: 0.5rem;
+}
+#vp[mode=card]>#vp_more{
+    display: none;
+}
+/* 最大化 */
+#vp[mode=full]{
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0!important;
+    width: 100vw;
+    height: 100vh;
+    height: 100svh; /*兼容不好但特好用*/
+}
+#vp[mode=full] #vp_btns {
+    position: absolute;
+    bottom: 0;
+    width: 100vw;
+}
+#vp[mode=full] #vp_seek {
+    position: absolute;
+    bottom: 5rem;
+    width: 100vw;
+}
+/* NOT选择 */
+#vp:not([mode=min]) > #vp_btns{
+    display: flex;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 1rem 0.5rem;
+}
+#vp:not([mode=min]) > #vp_btns>.vp_btn{
+    margin: 0 0.5rem;
+}
+
+@media screen and (min-width:50rem) {
+    #vp_cover{
+        border-radius: 100vmax;
+        background-size: cover !important;
+        transition: all .2s;
+    }
+    #vp_cover:hover{
+        border-radius: 0;
+        transform: scale(1.2);
+    }
+    #vp_more{
+        width: 100vw;
+        margin: 0 1rem;
+        box-sizing: border-box;
+    }
+    #vp_lyrics{
+        height: 100%;
+    }
+}
+@media screen and (max-width:50rem) {
+    #vp_cover{
+        background-size: cover !important;
+        position: fixed;
+        inset: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        opacity: 0.4;
+        z-index: -1;
+        margin-top: 0 !important;
+    }
+    #vp_lyrics{
+        width: 100% !important;
+        height: 100%;
+    }
+}

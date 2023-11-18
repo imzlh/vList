@@ -109,6 +109,21 @@
         mkdir:path=>new Promise((rs,rj)=>
             $.fs._ajax('MKCOL',path,rs,rj).send()
         ),
+        info:path=>new Promise(rs=>{
+            let solve = function(){
+                    if(request.status == 404){
+                        type = false;
+                    }else if(request.status == 200 && path.substring(path.length-1) != '/'){
+                        type = request.getResponseHeader('content-type');
+                    }
+                    rs({
+                        length : parseInt(request.getResponseHeader('content-length')),
+                        type,
+                        date   : new Date(request.getResponseHeader('last-modified'))
+                    });
+                },request = $.fs._ajax('HEAD',path,solve,solve),type = 'dir';
+            request.send();
+        }),
         open:function(path,mode='rw'){
             if(typeof path != 'string') throw new TypeError('Path(#1) should be string.');
             path = this._url(path);

@@ -60,7 +60,8 @@
             "depvideo":[
                 "ts",
                 "flv",
-                "m3u8"
+                "m3u8",
+                "m2ts"
             ]
         },
         "audio": {
@@ -105,7 +106,7 @@
     },
     "opener":{
         "audio":"opener/aplayer.js",
-        "video":"opener/hplayer.js",
+        "video":"opener/vpframe.js",
         "depvideo":"opener/artplayer.js",
         "cd":"opener/vplayer.js",
         "image":"opener/viewer.js",

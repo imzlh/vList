@@ -80,6 +80,24 @@ css.innerHTML = `
         background-color: rgb(188 188 188 / 50%);
         border-radius: .3rem;
     }
+    .flist > .item{
+        padding: 0 .5rem 1rem .5rem;
+        border-bottom: solid .1rem darkgray;
+    }
+    .separate > span{
+        display: inline-block;
+        width: 49%;
+        box-sizing: border-box;
+        padding: .25rem;
+    }
+    .flist > .item span{
+        font-size: .9rem;
+    }
+    .flist > .item p{
+        white-space: nowrap;
+        overflow: hidden;
+        color: gray;
+    }
 `;
 document.body.append(css);
 
@@ -89,6 +107,15 @@ document.body.append(css);
     await $.module.load('module/davfs.js');
     // 初始化配置
     var flist = [],action = 'copy';
+    // 一些格式化函数
+    function sizeFormat(size){
+        if(isNaN(size)) return size;
+        level = ['B','KB','MB','GB','TB','PB'];
+        for (var i = 0; size > 800; i++) size /= 1024;
+        return size.toFixed(2) + level[i];
+    }
+    const dateFormat = date =>
+        `${date.getFullYear()}-${date.getMonth()}-${date.getDay()} ${date.getHours()}:${date.getMinutes()}`;
     // 创建一个文件选择框
     function initFileDrop(elem){
         let uploading = false;
@@ -98,7 +125,8 @@ document.body.append(css);
                 prog = document.createElement('div'),
                 msg = $.dialog.msg('info','稍等','上传中...<b class="prog">0</b> / '+files.length),
                 progtip = msg.getElementsByClassName('prog')[0],// 指示第几个文件
-                i = 1,pathcur = $.fs._get(),start = Date.now();// 开始时间
+                i = 1,pathcur = $.fs._get(),start = Date.now(),// 开始时间
+                created = {},exists = [];   // 防止文件夹反复创建，文件覆盖提示
             if(CONFIG.debug) console.log('Upload is starting.',files,'use progBar',prog);
             progdiv.classList.add('progress');
             progdiv.append(prog);
@@ -106,19 +134,85 @@ document.body.append(css);
             uploading = true;
             for(let item of files)
                 try{
-                    await $.fs.write(pathcur + item.name,item,prog);  // 上传
-                    progtip.innerText = i++;
+                    if(!item.size){
+                        $.dialog.msg('warn','警告','目录无法拖拽上传',5);
+                        continue;
+                    }else if(item.webkitRelativePath && !(item.webkitRelativePath in created)) try{
+                        created[item.webkitRelativePath] = await $.fs.mkdir(pathcur + item.webkitRelativePath.splitLast('/')[0] + '/');
+                    }catch(e){}
+                    let rname = pathcur + (item.webkitRelativePath || item.name),
+                        finfo = await $.fs.info(rname);
+                    if(finfo.type != false){
+                        exists.push({
+                            remote  : {
+                                size    : finfo.length,
+                                date    : finfo.date
+                            },
+                            current : {
+                                size    : item.size,
+                                date    : new Date(item.lastModified)
+                            },
+                            content : item,
+                            path    : rname,
+                            name    : rname.splitLast('/')[1]
+                        });
+                        if(CONFIG.debug) console.log('Same file:',rname.splitLast('/')[1],finfo);
+                    }else{
+                        await $.fs.write(rname,item,prog);  // 上传
+                        progtip.innerText = i++;
+                    }
                 }catch(e){
                     $.dialog.msg('error','上传出错:',xhrResult(e.target),5).title = '出错文件:'+item.name;
-                    if(CONFIG.debug) console.log('Warn:Failed to UPLOAD:',e);
-                    progdiv.remove();msg.remove();
-                    return uploading = false;
+                    if(CONFIG.debug) console.log('Warn:Failed to UPLOAD',files,':',e);
                 }
-            progdiv.remove();msg.remove();
-            $.dialog.msg('success','成功','上传成功!',5);
-            VIEW.contentDocument.location.reload();
-            uploading = false;
-            if(CONFIG.debug) console.log('Succeed.TimeUSE:',Date.now() - start,'ms');
+            if(exists.length > 0) $.dialog.dialog('覆盖',`
+                <h3 style="color: #a71e1e;">${exists.length}个文件会被覆盖，继续吗？</h3>
+                <div class="flist"></div>
+            `,{
+                '显示所有:info':function(self){
+                    const div = self.getElementsByClassName('flist')[0];
+                    div.innerHTML = `<div class="separate">
+                        <span>待上传的文件</span>
+                        <span>已经位于远程服务器</span>
+                    </div>`;
+                    for(let data of exists) try{
+                        let elem = document.createElement('div');
+                        elem.classList.add('item','separate');
+                        elem.innerHTML = `
+                            <p><b>文件</b> ${data.name}</p>
+                            <span class="current">
+                                <div><b>总大小</b> ${sizeFormat(data.current.size)}</div>
+                                <div><b>修改于</b> ${dateFormat(data.current.date)}</div>
+                            </span>
+                            <span class="remote">
+                                <div><b>总大小</b> ${sizeFormat(data.remote.size)}</div>
+                                <div><b>修改于</b> ${dateFormat(data.remote.date)}</div>
+                            </span>
+                        `;
+                        div.append(elem);
+                    }catch(e){
+                        if(CONFIG.debug) console.log('Something error with:',data);
+                        throw e;
+                    }
+                },'覆盖:error':async function(self){
+                    self.remove();
+                    for(let data of exists){
+                        await $.fs.write(data.path,data.content,prog);
+                        progtip.innerText = i++;
+                    }
+                    finish();
+                },'取消:success':function(self){
+                    finish();self.remove();
+                }
+            });
+            else finish();
+            function finish(){
+                progdiv.remove();msg.remove();
+                $.dialog.msg('success','成功','上传成功!',5);
+                VIEW.contentDocument.location.reload();
+                uploading = false;
+                if(CONFIG.debug) console.log('Succeed.TimeUSE:',Date.now() - start,'ms');
+            }
         }
         // 点击上传
         let input = document.createElement('input');
@@ -271,15 +365,17 @@ document.body.append(css);
         <path fill="#16b372" fill-rule="evenodd" d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383z"/>
         <path fill="#63af1e" style="transform:scale(0.8) translate(2px, 3px);" fill-rule="evenodd" d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
     </svg>`,'上传',function(){
-        initFileDrop($.dialog.dialog('上传',`<div class="filedrop" style="user-select:none;">
+        let input = initFileDrop($.dialog.dialog('上传',`<div class="filedrop" style="user-select:none;">
             <svg viewBox="0 0 16 16" style="display: inline-block;width: 6rem;">
                 <path fill="#eb4747" d="M16 7.5a2.5 2.5 0 0 1-1.456 2.272 3.513 3.513 0 0 0-.65-.824 1.5 1.5 0 0 0-.789-2.896.5.5 0 0 1-.627-.421 3 3 0 0 0-5.22-1.625 5.587 5.587 0 0 0-1.276.088 4.002 4.002 0 0 1 7.392.91A2.5 2.5 0 0 1 16 7.5z"/>
                 <path fill="#36bd8f" d="M7 5a4.5 4.5 0 0 1 4.473 4h.027a2.5 2.5 0 0 1 0 5H3a3 3 0 0 1-.247-5.99A4.502 4.502 0 0 1 7 5zm3.5 4.5a3.5 3.5 0 0 0-6.89-.873.5.5 0 0 1-.51.375A2 2 0 1 0 3 13h8.5a1.5 1.5 0 1 0-.376-2.953.5.5 0 0 1-.624-.492V9.5z"/>
             </svg>
-            <p>点击选取文件</p>
+            <p>点击选取文件(夹)</p>
         </div>`,{
-            '取消:error':self=>self.remove(),
-        }).getElementsByClassName('filedrop')[0]).click();
+            '上传文件(夹):info':() => input.webkitdirectory = !input.webkitdirectory,
+            '取消:error':self => self.remove()
+        }).getElementsByClassName('filedrop')[0]);
+        // input.click();
     });
     // 新建文件夹
     $.tool.add(`<svg viewBox="0 0 16 16">

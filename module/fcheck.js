@@ -28,8 +28,8 @@ $.tool.add(
             b.setAttribute('style','float:left;margin-right: 1rem;transform: scale(1.4);');
             b.oninput = function(){
                 for (var i = 0; i < list.length; i++)
-                    list[i].getElementsByTagName('input')[0].click();
-            }
+                    list[i].getElementsByTagName('input')[0].checked = b.checked;
+            };
             all.append(b);
             // 将checkbox放入文件标签前
             for (let i = 0; i < list.length; i++){
