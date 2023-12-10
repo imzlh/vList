@@ -27,8 +27,11 @@ $.tool.add(
             b.type = 'checkbox';
             b.setAttribute('style','float:left;margin-right: 1rem;transform: scale(1.4);');
             b.oninput = function(){
-                for (var i = 0; i < list.length; i++)
-                    list[i].getElementsByTagName('input')[0].checked = b.checked;
+                for (var i = 0; i < list.length; i++){
+                    let cur = list[i].getElementsByTagName('input')[0];
+                    cur.checked = b.checked;
+                    cur.oninput();
+                }
             };
             all.append(b);
             // 将checkbox放入文件标签前
@@ -39,11 +42,10 @@ $.tool.add(
                 b.oninput = function(){
                     if(CONFIG.debug) console.log(list[i].children[0].getAttribute('title'),this.checked?'Checked.':'UnChecked');
                     if(this.checked){
-                        this.cid = files.length;    // 第n个被选中
-                        if(this.cid == 0) setState(true);
+                        if(files.length == 0) setState(true);
                         files.push(list[i].children[0]);// 载入到数组
                     }else{
-                        files.splice(this.cid,1);     // 取消选中
+                        files.splice(files.indexOf(list[i].children[0]),1);     // 取消选中
                         if(!files.length) setState(false);// 全部取消
                     }
                 };

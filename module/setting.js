@@ -201,16 +201,16 @@ h2.colorful::before{
     }
     
     // PWA Application
-    if ("serviceWorker" in navigator)
-        try{
-            navigator.serviceWorker.register('sw.app.js',{
-                scope:'./'
-            });
-        }catch(e){
-            if(CONFIG.debug) console.warn('SW-reg failed.',e);
-        }
-    else if(CONFIG.debug)
-        console.log('We cannot enable SW.non-HTTPS site?');
+    // if ("serviceWorker" in navigator)
+    //     try{
+    //         navigator.serviceWorker.register('sw.app.js',{
+    //             scope:'./'
+    //         });
+    //     }catch(e){
+    //         if(CONFIG.debug) console.warn('SW-reg failed.',e);
+    //     }
+    // else if(CONFIG.debug)
+    //     console.log('We cannot enable SW.non-HTTPS site?');
     window.onbeforeinstallprompt = function(e){
         let btn = document.getElementById('_pwa_setup_btn');
         btn.hidden = false,btn.onclick = function(){
